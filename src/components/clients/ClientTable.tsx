@@ -48,7 +48,12 @@ function SortHeader({
   );
 }
 
-export function ClientTable() {
+interface ClientTableProps {
+  selectedClient?: Client | null;
+  onSelected?: (client: Client) => void;
+}
+
+export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
   const { selectedNetwork } = useNetwork();
   const [timespan, setTimespan] = useState(86400);
   const [search, setSearch] = useState("");
@@ -123,9 +128,9 @@ export function ClientTable() {
 
   return (
     <div className="space-y-3">
-      {/* Toolbar */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
+      {/* Toolbar — stacks vertically on mobile */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="relative flex-1 w-full sm:max-w-sm">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
           <input
             type="text"
@@ -135,21 +140,23 @@ export function ClientTable() {
             className="w-full pl-8 pr-3 py-1.5 rounded-lg text-sm bg-white/5 border border-white/10 placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
-        <select
-          value={timespan}
-          onChange={(e) => setTimespan(Number(e.target.value))}
-          className="text-sm rounded-lg px-3 py-1.5 bg-white/5 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          {TIMESPANS.map((t) => (
-            <option key={t.value} value={t.value}>{t.label}</option>
-          ))}
-        </select>
-        {clients && (
-          <span className="text-xs text-white/30 whitespace-nowrap">
-            {sorted.length} {sorted.length === 1 ? "client" : "clients"}
-            {search && clients.length !== sorted.length && ` of ${clients.length}`}
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          <select
+            value={timespan}
+            onChange={(e) => setTimespan(Number(e.target.value))}
+            className="text-sm rounded-lg px-3 py-1.5 bg-white/5 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {TIMESPANS.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          {clients && (
+            <span className="text-xs text-white/30 whitespace-nowrap">
+              {sorted.length} {sorted.length === 1 ? "client" : "clients"}
+              {search && clients.length !== sorted.length && ` of ${clients.length}`}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Loading */}
@@ -199,8 +206,17 @@ export function ClientTable() {
                 {sorted.map((c) => {
                   const total = c.usage.sent + c.usage.recv;
                   const active = isRecentlyActive(c.lastSeen);
+                  const isSelected = selectedClient?.id === c.id;
                   return (
-                    <tr key={c.id} className="hover:bg-white/3 transition-colors">
+                    <tr
+                      key={c.id}
+                      onClick={() => onSelected?.(c)}
+                      className={cn(
+                        "hover:bg-white/3 transition-colors",
+                        onSelected && "cursor-pointer",
+                        isSelected && "border-l-2 border-l-blue-500 bg-blue-500/5"
+                      )}
+                    >
                       <td className="pl-3 py-2.5">
                         <span
                           className={cn(

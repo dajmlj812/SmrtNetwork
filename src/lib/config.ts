@@ -13,6 +13,9 @@ export interface AppConfig {
   smtpPass?: string;
   smtpFrom?: string;
   smtpTo?: string;
+  alertingEnabled?: boolean;
+  alertThreshold?: number; // health score below this triggers an alert (default 80)
+  alertCooldownMinutes?: number; // minimum minutes between alerts for same network (default 60)
 }
 
 export function readConfig(): AppConfig {
@@ -59,5 +62,14 @@ export function getSmtpConfig() {
     pass: c.smtpPass ?? process.env.SMTP_PASS ?? "",
     from: c.smtpFrom ?? process.env.SMTP_FROM ?? "",
     to: c.smtpTo ?? process.env.SMTP_TO ?? "",
+  };
+}
+
+export function getAlertingConfig() {
+  const c = readConfig();
+  return {
+    enabled: c.alertingEnabled ?? false,
+    threshold: c.alertThreshold ?? 80,
+    cooldownMinutes: c.alertCooldownMinutes ?? 60,
   };
 }

@@ -16,6 +16,9 @@ interface SettingsStatus {
   smtpPort: number;
   smtpFrom: string;
   smtpTo: string;
+  alertingEnabled: boolean;
+  alertThreshold: number;
+  alertCooldownMinutes: number;
 }
 
 function KeyField({
@@ -138,6 +141,11 @@ export default function SettingsPage() {
   const [smtpFrom, setSmtpFrom] = useState("");
   const [smtpTo, setSmtpTo] = useState("");
 
+  // Alerting fields
+  const [alertingEnabled, setAlertingEnabled] = useState(false);
+  const [alertThreshold, setAlertThreshold] = useState("80");
+  const [alertCooldownMinutes, setAlertCooldownMinutes] = useState("60");
+
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
@@ -148,6 +156,9 @@ export default function SettingsPage() {
         setSmtpPort(data.smtpPort ? String(data.smtpPort) : "587");
         setSmtpFrom(data.smtpFrom ?? "");
         setSmtpTo(data.smtpTo ?? "");
+        setAlertingEnabled(data.alertingEnabled ?? false);
+        setAlertThreshold(String(data.alertThreshold ?? 80));
+        setAlertCooldownMinutes(String(data.alertCooldownMinutes ?? 60));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -158,7 +169,7 @@ export default function SettingsPage() {
     setSaved(false);
     setSaveError(null);
 
-    const body: Record<string, string | number> = {};
+    const body: Record<string, string | number | boolean> = {};
     if (merakiKey.trim()) body.merakiApiKey = merakiKey.trim();
     if (merakiBaseUrl.trim()) body.merakiBaseUrl = merakiBaseUrl.trim();
     if (anthropicKey.trim()) body.anthropicApiKey = anthropicKey.trim();
@@ -168,6 +179,9 @@ export default function SettingsPage() {
     if (smtpPass.trim()) body.smtpPass = smtpPass.trim();
     if (smtpFrom.trim()) body.smtpFrom = smtpFrom.trim();
     if (smtpTo.trim()) body.smtpTo = smtpTo.trim();
+    body.alertingEnabled = alertingEnabled;
+    if (alertThreshold.trim()) body.alertThreshold = Number(alertThreshold.trim());
+    if (alertCooldownMinutes.trim()) body.alertCooldownMinutes = Number(alertCooldownMinutes.trim());
 
     try {
       const res = await fetch("/api/settings", {
@@ -181,6 +195,9 @@ export default function SettingsPage() {
       // Refresh status
       const fresh = await fetch("/api/settings").then((r) => r.json()) as SettingsStatus;
       setStatus(fresh);
+      setAlertingEnabled(fresh.alertingEnabled ?? false);
+      setAlertThreshold(String(fresh.alertThreshold ?? 80));
+      setAlertCooldownMinutes(String(fresh.alertCooldownMinutes ?? 60));
       setMerakiKey("");
       setAnthropicKey("");
       setSmtpPass("");
@@ -217,7 +234,10 @@ export default function SettingsPage() {
     (status && smtpHost !== (status.smtpHost ?? "")) ||
     (status && smtpPort !== String(status.smtpPort ?? 587)) ||
     (status && smtpFrom !== (status.smtpFrom ?? "")) ||
-    (status && smtpTo !== (status.smtpTo ?? ""));
+    (status && smtpTo !== (status.smtpTo ?? "")) ||
+    (status && alertingEnabled !== (status.alertingEnabled ?? false)) ||
+    (status && alertThreshold !== String(status.alertThreshold ?? 80)) ||
+    (status && alertCooldownMinutes !== String(status.alertCooldownMinutes ?? 60));
 
   return (
     <div className="max-w-xl space-y-6">
@@ -398,6 +418,71 @@ export default function SettingsPage() {
                   {smtpTestResult.message}
                 </span>
               )}
+            </div>
+          </div>
+
+          {/* Alerting */}
+          <div className="rounded-xl border border-white/10 p-5 space-y-4">
+            <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider flex items-center gap-2">
+              Alerting
+            </h2>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <label htmlFor="alertingEnabled" className="text-sm font-medium text-white/80">
+                  Enable proactive alerting
+                </label>
+                <p className="text-xs text-white/40 mt-0.5">
+                  When enabled, SmrtNetwork polls all networks every 5 minutes and emails you if any network&apos;s health score drops below the threshold.
+                </p>
+              </div>
+              <input
+                id="alertingEnabled"
+                type="checkbox"
+                checked={alertingEnabled}
+                onChange={(e) => setAlertingEnabled(e.target.checked)}
+                className="w-4 h-4 rounded accent-blue-500 cursor-pointer"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label htmlFor="alertThreshold" className="text-sm font-medium text-white/80 block">
+                  Alert threshold (health score)
+                </label>
+                <input
+                  id="alertThreshold"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={alertThreshold}
+                  onChange={(e) => setAlertThreshold(e.target.value)}
+                  className={cn(
+                    "w-full px-3 py-2 rounded-lg text-sm font-mono",
+                    "bg-white/5 border border-white/10",
+                    "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  )}
+                />
+                <p className="text-xs text-white/30">Default: 80 (0–100)</p>
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="alertCooldownMinutes" className="text-sm font-medium text-white/80 block">
+                  Alert cooldown (minutes)
+                </label>
+                <input
+                  id="alertCooldownMinutes"
+                  type="number"
+                  min={1}
+                  value={alertCooldownMinutes}
+                  onChange={(e) => setAlertCooldownMinutes(e.target.value)}
+                  className={cn(
+                    "w-full px-3 py-2 rounded-lg text-sm font-mono",
+                    "bg-white/5 border border-white/10",
+                    "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  )}
+                />
+                <p className="text-xs text-white/30">Minimum minutes between alerts for same network. Default: 60</p>
+              </div>
             </div>
           </div>
 

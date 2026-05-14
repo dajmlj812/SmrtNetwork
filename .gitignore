@@ -25,6 +25,9 @@ yarn-error.log*
 # runtime config — contains secrets
 smrt-config.json
 
+# snapshot data — contains network info
+data/
+
 # env files — never commit secrets
 .env
 .env.local

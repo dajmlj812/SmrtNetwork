@@ -6,6 +6,7 @@ import {
   getMerakiBaseUrl,
   getAnthropicApiKey,
   getSmtpConfig,
+  getAlertingConfig,
   maskKey,
 } from "@/lib/config";
 
@@ -15,6 +16,7 @@ export async function GET() {
   const baseUrl = getMerakiBaseUrl();
   const smtp = getSmtpConfig();
   const smtpConfigured = !!(smtp.host && smtp.user && smtp.pass);
+  const alerting = getAlertingConfig();
 
   return NextResponse.json({
     merakiApiKeySet: !!merakiKey,
@@ -28,6 +30,9 @@ export async function GET() {
     smtpPort: smtp.port,
     smtpFrom: smtp.from,
     smtpTo: smtp.to,
+    alertingEnabled: alerting.enabled,
+    alertThreshold: alerting.threshold,
+    alertCooldownMinutes: alerting.cooldownMinutes,
   });
 }
 
@@ -43,6 +48,9 @@ export async function POST(req: NextRequest) {
       smtpPass?: string;
       smtpFrom?: string;
       smtpTo?: string;
+      alertingEnabled?: boolean;
+      alertThreshold?: number;
+      alertCooldownMinutes?: number;
     };
 
     const updates: Partial<{
@@ -55,6 +63,9 @@ export async function POST(req: NextRequest) {
       smtpPass: string;
       smtpFrom: string;
       smtpTo: string;
+      alertingEnabled: boolean;
+      alertThreshold: number;
+      alertCooldownMinutes: number;
     }> = {};
 
     if (body.merakiApiKey?.trim()) updates.merakiApiKey = body.merakiApiKey.trim();
@@ -66,6 +77,9 @@ export async function POST(req: NextRequest) {
     if (body.smtpPass?.trim()) updates.smtpPass = body.smtpPass.trim();
     if (body.smtpFrom?.trim()) updates.smtpFrom = body.smtpFrom.trim();
     if (body.smtpTo?.trim()) updates.smtpTo = body.smtpTo.trim();
+    if (body.alertingEnabled != null) updates.alertingEnabled = Boolean(body.alertingEnabled);
+    if (body.alertThreshold != null) updates.alertThreshold = Number(body.alertThreshold);
+    if (body.alertCooldownMinutes != null) updates.alertCooldownMinutes = Number(body.alertCooldownMinutes);
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "No valid fields provided" }, { status: 400 });
