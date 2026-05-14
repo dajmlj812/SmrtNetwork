@@ -24,18 +24,6 @@
 
 ---
 
-### Alert log email recipient is a single address
-
-**Symptom:** The SMTP "To" field in Settings accepts only one email address.
-
-**Cause:** The current config schema stores `smtpTo` as a plain string.
-
-**Workaround:** Use a distribution list or group email address as the "To" value.
-
-**Fix planned:** v0.2.0 — multi-recipient support via comma-separated addresses.
-
----
-
 ### EventFeed hidden for combined / template networks
 
 **Symptom:** The recent events feed does not appear on certain networks.
@@ -46,27 +34,22 @@
 
 ---
 
-### Snapshot pruning not implemented
-
-**Symptom:** The `%APPDATA%\SmrtNetwork\data\snapshots\` directory grows indefinitely as the poller runs every 5 minutes.
-
-**Cause:** No automatic cleanup logic has been implemented.
-
-**Impact:** Negligible for the first few weeks (each snapshot is a few KB), but will accumulate over months.
-
-**Fix planned:** v0.2.0 — automatic pruning of snapshots older than 30 days.
-
----
-
 ### Multi-recipient webhooks not supported
 
 **Symptom:** Only one Slack webhook URL and one Teams webhook URL can be configured.
 
 **Workaround:** Point the webhook at a channel that forwards to multiple destinations, or use Slack/Teams workflow automation.
 
-**Fix planned:** v0.2.0.
+**Fix planned:** v0.3.0.
 
 ---
+
+## Fixed in v0.2.0
+
+| Bug | Fixed in |
+|---|---|
+| Snapshot directory grows indefinitely | v0.2.0 |
+| SMTP To field accepts only one email address | v0.2.0 |
 
 ## Fixed in v0.1.0
 

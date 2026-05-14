@@ -27,17 +27,18 @@ Open [http://localhost:3000](http://localhost:3000).
 
 | Area | What it does |
 |---|---|
-| Dashboard | Health score, stat cards, snapshot trends, live event feed |
+| Dashboard | Health score, stat cards, snapshot trends, live event feed, HTML + PDF reports |
+| Topology | SVG device map — status-colored nodes grouped by type, hover for device details |
 | Devices | Search by MAC/IP, full client history, AI-powered diagnosis |
-| Clients | Network-wide client list with usage, OS, manufacturer |
-| Traffic | Top talkers, bandwidth trends by period, application breakdown |
+| Clients | Network-wide client list with usage, OS, manufacturer, detail panel |
+| Traffic | Top talkers, bandwidth trends, WAN uplink history (1h – 30d timespan selector) |
 | Wireless | SSID status, channel utilization, connection pipeline funnel |
 | Switches | Per-port status, speed, PoE usage, client count |
 | VPN | Site-to-site tunnel reachability across the org |
-| Alerts | AI recommendations, alert log with history, Slack/Teams webhooks |
-| Firmware | Org-wide firmware version audit grouped by product type |
+| Alerts | AI recommendations, alert log, Slack/Teams webhooks, maintenance window muting |
+| Firmware | Org-wide firmware audit with release note links per product type |
 | Chat | Natural-language Q&A about your network via Claude |
-| Settings | API keys, SMTP email, webhooks, scheduled reports, password lock |
+| Settings | API keys, SMTP email, webhooks, scheduled reports, alert muting, password lock |
 
 ## Documentation
 

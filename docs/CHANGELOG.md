@@ -4,6 +4,71 @@ All notable changes to SmrtNetwork are documented here.
 
 ---
 
+## v0.2.0 — 2026-05-14
+
+### New features
+
+**Network topology map**
+- New `/topology` page — SVG canvas showing all devices in the selected network grouped by type: Firewalls/Routers → Switches → Access Points → other categories
+- Nodes are color-coded by live status (green = online, yellow = alerting, red = offline, gray = unknown)
+- Dashed connection lines from each device to its nearest parent layer
+- Hover tooltip shows device name, model, serial, LAN/WAN IPs, and status
+- Summary chip bar with per-status counts and total device count
+- Added "Topology" to sidebar navigation
+
+**Historical trending**
+- WAN Uplink Health chart now has a `1h / 6h / 24h / 7d / 30d` timespan selector
+- API resolution auto-scales with the selected window (60 s for 1 h → 3600 s for 7 d/30 d)
+- Chart subtitle updates to reflect the currently selected window
+
+**PDF report export**
+- New "Download PDF" button on the Overview page opens the HTML report in a new browser window and triggers the browser print dialog (save as PDF)
+- Original "Download HTML" button behavior unchanged
+- No additional dependencies — uses the browser's native print-to-PDF
+
+**Alert muting / maintenance windows**
+- New control in Settings: date/time picker to mute all alert notifications until a specific time
+- Background poller skips SMTP / Slack / Teams notifications when alerts are muted
+- "Clear Mute" button removes the mute immediately
+- Mute state stored in `smrt-config.json` (`alertMutedUntil` field) and survives restarts
+
+**Snapshot pruning**
+- Background poller now automatically removes snapshots older than 30 days
+- Hard cap of 2,000 entries as a secondary guard
+- No manual intervention required — pruning runs on every poller cycle
+
+**Client detail panel improvements**
+- Active / Inactive badge in the panel header (green pill if last seen within 15 minutes, gray otherwise)
+- 3-column quick-stats bar: Total Usage · Days Seen · Access Point
+- Action buttons updated to brand green
+
+**Firmware release note links**
+- Firmware version cells in the Firmware Audit table now link to the Meraki release notes page for each product category (wireless, switch, appliance, cellular gateway, camera, sensor)
+- External link icon appears on hover
+
+**Multi-recipient SMTP (documentation fix)**
+- UI now shows a comma hint under the "To" field confirming comma-separated addresses are accepted
+- Nodemailer natively supports this — no backend change required
+
+---
+
+## v0.1.1 — 2026-05-14
+
+BuildITSmrt branding release.
+
+### Changes
+- Applied BuildITSmrt, LLC. brand identity throughout the application
+- Sidebar header: company logo and name replace the plain text header
+- Login page: logo image, brand-green sign-in button and focus ring
+- Dark theme: custom CSS variables (`--background: #0d1020`, `--card: #131728`, `--accent: #1e9c4a`)
+- Light theme: updated foreground and background to match brand navy/off-white palette
+- Browser tab title and meta description updated to include "BuildITSmrt"
+- Brand assets added to `public/`: `favicon.ico`, `favicon.png`, `logo-mark.png`, `logo-banner.png`, `logo.svg`
+- Sidebar active nav item color updated to brand green (`#1e9c4a`)
+- Version bumped to `0.1.1` in `package.json` and `src/lib/version.ts`
+
+---
+
 ## v0.1.0 — 2026-05-14
 
 First public release.

@@ -15,8 +15,18 @@
 - **Snapshot trend chart** — 24-hour health score history from background poller snapshots
 - **Live event feed** — recent Meraki events for the selected network (association, VPN changes, reboots)
 - **Poller status indicator** — shows whether the background health poller is running
-- **Report button** — generates a downloadable HTML health report on demand
+- **Download HTML** — generates a downloadable HTML health report on demand; optionally emails it if SMTP is configured
+- **Download PDF** — opens the same report in a new browser window and triggers the print dialog (save as PDF via browser)
 - **Update banner** — notifies when a newer version of SmrtNetwork is available on GitHub
+
+## Network Topology
+
+- SVG device map for the selected network, grouped by layer: Firewall/Router → Switch → Access Point → other categories
+- Nodes color-coded by live status: green (online), yellow (alerting), red (offline), gray (unknown/dormant)
+- Dashed connection lines drawn from each device to its nearest parent layer
+- Hover any node to see: device name, model, serial, LAN IP, WAN IP, and status
+- Summary chip bar: per-status counts and total device count
+- Available at `/topology` — accessible from the sidebar
 
 ## Devices
 
@@ -31,6 +41,7 @@
 - All clients seen on the selected network in the past 24 hours
 - Columns: description, MAC, IP, SSID/AP, manufacturer, OS, usage (sent/recv), first/last seen
 - Full list (up to 1000 clients) — no artificial row caps
+- **Client detail panel** — click any client to see: Active/Inactive badge, quick-stats bar (Total Usage · Days Seen · Access Point), full session details
 - **CSV export** — download the full client list as a UTF-8 CSV (Excel-compatible)
 
 ## Traffic
@@ -38,7 +49,7 @@
 - **Top talkers chart** — horizontal bar chart of top 25 clients by bandwidth; updates every 30 seconds
 - **Bandwidth summary** — sent/received/total and client count across four periods: 1 hour, 6 hours, 24 hours, 7 days
 - **AI traffic analysis** — identifies unusual patterns, top applications, and QoS recommendations
-- **WAN uplink health** — loss % and latency over 24 hours for MX/Z appliances
+- **WAN uplink health** — loss % and latency for MX/Z appliances with a selectable timespan: `1h / 6h / 24h / 7d / 30d`; chart resolution auto-scales with the selected window
 
 ## Wireless
 
@@ -68,6 +79,7 @@
 - **CSV export** — download the full alert log
 - **Slack webhook** — sends alert notifications to a Slack channel
 - **Teams webhook** — sends alert notifications to a Microsoft Teams channel
+- **Alert muting** — set a date/time in Settings to suppress all notifications until that time (maintenance window)
 
 ## Firmware Audit
 
@@ -75,6 +87,7 @@
 - Collapsible section per product type showing all versions, device counts, and network counts
 - **Status badges**: "Uniform" (all same version), "Baseline" (most common when mixed), "Potentially outdated" (minority versions)
 - Mixed-version product types flagged with a yellow "N versions" badge
+- Firmware version cells link to Meraki release notes for the device's product category
 
 ## Chat
 
@@ -93,7 +106,8 @@
 
 - Background poller saves a health snapshot every 5 minutes
 - Snapshots used for the dashboard trend chart and the compare view
-- Stored locally in `%APPDATA%\SmrtNetwork\data\snapshots\`
+- Automatically pruned: snapshots older than 30 days are removed; hard cap of 2,000 entries
+- Stored locally in `%APPDATA%\SmrtNetwork\`
 
 ## Global Search (Cmd+K / Ctrl+K)
 
@@ -107,8 +121,8 @@
 |---|---|
 | API Keys | Meraki API Key, Anthropic API Key, Meraki Base URL |
 | Active Organization | Dropdown of all orgs visible to the API key |
-| Email Reports | SMTP host, port, credentials, from/to addresses, schedule (none/daily/weekly), test button |
-| Alerting | Enable toggle, health threshold, cooldown minutes |
+| Email Reports | SMTP host, port, credentials, from/to addresses (comma-separated for multiple), schedule (none/daily/weekly), test button |
+| Alerting | Enable toggle, health threshold, cooldown minutes, alert muting (maintenance window date/time) |
 | Webhooks | Slack webhook URL, Teams webhook URL, test buttons |
 | Security | Set/remove app password |
 
