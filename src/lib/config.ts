@@ -23,7 +23,17 @@ export interface AppConfig {
   reportSchedule?: "none" | "daily" | "weekly";
   activeOrgId?: string;
   appPasswordHash?: string;
+  readonlyPasswordHash?: string;
   alertMutedUntil?: string;
+  sessionTimeoutDays?: number;
+  ldapEnabled?: boolean;
+  ldapUrl?: string;
+  ldapBaseDn?: string;
+  ldapBindDn?: string;
+  ldapBindPassword?: string;
+  ldapUserFilter?: string;
+  ldapAdminGroup?: string;
+  ldapReadonlyGroup?: string;
 }
 
 export function readConfig(): AppConfig {
@@ -95,6 +105,25 @@ export function isAlertMuted(): boolean {
   const until = readConfig().alertMutedUntil;
   if (!until) return false;
   return new Date(until) > new Date();
+}
+
+export function getSessionTimeoutSeconds(): number {
+  const days = readConfig().sessionTimeoutDays ?? 7;
+  return days * 24 * 60 * 60;
+}
+
+export function getLdapConfig() {
+  const c = readConfig();
+  return {
+    enabled: c.ldapEnabled ?? false,
+    url: c.ldapUrl ?? "",
+    baseDn: c.ldapBaseDn ?? "",
+    bindDn: c.ldapBindDn,
+    bindPassword: c.ldapBindPassword,
+    userFilter: c.ldapUserFilter ?? "(sAMAccountName={{username}})",
+    adminGroup: c.ldapAdminGroup,
+    readonlyGroup: c.ldapReadonlyGroup,
+  };
 }
 
 function splitUrls(val?: string): string[] {

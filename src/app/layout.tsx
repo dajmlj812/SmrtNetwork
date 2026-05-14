@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { NetworkProvider } from "@/lib/context/NetworkContext";
+import { RoleProvider, type Role } from "@/lib/context/RoleContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { UpdateBanner } from "@/components/layout/UpdateBanner";
@@ -20,6 +21,10 @@ export const metadata: Metadata = {
   },
 };
 
+function expectedHash(signingKey: string, suffix: string): string {
+  return createHash("sha256").update(signingKey + suffix).digest("hex");
+}
+
 export default async function RootLayout({
   children,
 }: {
@@ -29,14 +34,41 @@ export default async function RootLayout({
   const isPublic =
     pathname.startsWith("/login") || pathname.startsWith("/api/auth");
 
+  let role: Role = "none";
+
   if (!isPublic) {
     const cfg = readConfig();
     if (cfg.appPasswordHash) {
-      const session = (await cookies()).get("smrt-session")?.value;
-      const expected = createHash("sha256")
-        .update(cfg.appPasswordHash + "smrt-session-v1")
-        .digest("hex");
-      if (session !== expected) redirect("/login");
+      const session = (await cookies()).get("smrt-session")?.value ?? "";
+      const adminKey = cfg.appPasswordHash;
+
+      if (session.startsWith("admin:")) {
+        const hash = session.slice(6);
+        if (hash === expectedHash(adminKey, "smrt-session-admin-v1")) {
+          role = "admin";
+        } else {
+          redirect("/login");
+        }
+      } else if (session.startsWith("readonly:")) {
+        const hash = session.slice(9);
+        if (hash === expectedHash(adminKey, "smrt-session-readonly-v1")) {
+          role = "readonly";
+        } else {
+          redirect("/login");
+        }
+      } else if (session === "open:admin") {
+        role = "admin";
+      } else {
+        // Backward compat: old session format without role prefix
+        const oldExpected = expectedHash(adminKey, "smrt-session-v1");
+        if (session === oldExpected) {
+          role = "admin";
+        } else {
+          redirect("/login");
+        }
+      }
+    } else {
+      role = "admin"; // No password set
     }
   }
 
@@ -46,14 +78,16 @@ export default async function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <QueryProvider>
             <NetworkProvider>
-              <GlobalSearch />
-              <div className="flex flex-col h-screen bg-background text-foreground">
-                <UpdateBanner />
-                <div className="flex flex-1 overflow-hidden">
-                  <Sidebar />
-                  <main className="flex-1 overflow-auto p-6 pt-12 md:pt-6">{children}</main>
+              <RoleProvider role={role}>
+                <GlobalSearch />
+                <div className="flex flex-col h-screen bg-background text-foreground">
+                  <UpdateBanner />
+                  <div className="flex flex-1 overflow-hidden">
+                    <Sidebar />
+                    <main className="flex-1 overflow-auto p-6 pt-12 md:pt-6">{children}</main>
+                  </div>
                 </div>
-              </div>
+              </RoleProvider>
             </NetworkProvider>
           </QueryProvider>
         </ThemeProvider>

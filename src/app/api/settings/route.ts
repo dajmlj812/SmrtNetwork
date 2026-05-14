@@ -9,8 +9,10 @@ import {
   getAlertingConfig,
   getWebhookConfig,
   getActiveOrgId,
+  getLdapConfig,
   maskKey,
 } from "@/lib/config";
+import { appendAuditEntry } from "@/lib/audit-log";
 
 export async function GET() {
   const merakiKey    = getMerakiApiKey();
@@ -21,6 +23,7 @@ export async function GET() {
   const alerting     = getAlertingConfig();
   const webhooks     = getWebhookConfig();
   const config       = readConfig();
+  const ldap         = getLdapConfig();
 
   return NextResponse.json({
     merakiApiKeySet:      !!merakiKey,
@@ -38,7 +41,6 @@ export async function GET() {
     alertThreshold:        alerting.threshold,
     alertCooldownMinutes:  alerting.cooldownMinutes,
     networkThresholds:     config.networkThresholds ?? {},
-    // Expose raw comma-separated strings for the settings UI
     slackWebhookUrl:  config.slackWebhookUrl ?? "",
     teamsWebhookUrl:  config.teamsWebhookUrl ?? "",
     slackWebhookSet:  webhooks.slack.length > 0,
@@ -46,7 +48,17 @@ export async function GET() {
     reportSchedule:   config.reportSchedule ?? "none",
     activeOrgId:      getActiveOrgId(),
     appPasswordSet:   !!config.appPasswordHash,
+    readonlyPasswordSet: !!config.readonlyPasswordHash,
     alertMutedUntil:  config.alertMutedUntil ?? null,
+    sessionTimeoutDays: config.sessionTimeoutDays ?? 7,
+    ldapEnabled:       ldap.enabled,
+    ldapUrl:           ldap.url,
+    ldapBaseDn:        ldap.baseDn,
+    ldapBindDn:        ldap.bindDn ?? "",
+    ldapBindPasswordSet: !!config.ldapBindPassword,
+    ldapUserFilter:    ldap.userFilter,
+    ldapAdminGroup:    ldap.adminGroup ?? "",
+    ldapReadonlyGroup: ldap.readonlyGroup ?? "",
   });
 }
 
@@ -73,6 +85,15 @@ export async function POST(req: NextRequest) {
       reportSchedule: "none" | "daily" | "weekly";
       activeOrgId: string;
       alertMutedUntil: string | undefined;
+      sessionTimeoutDays: number;
+      ldapEnabled: boolean;
+      ldapUrl: string;
+      ldapBaseDn: string;
+      ldapBindDn: string;
+      ldapBindPassword: string;
+      ldapUserFilter: string;
+      ldapAdminGroup: string;
+      ldapReadonlyGroup: string;
     }> = {};
 
     if (typeof body.merakiApiKey === "string" && body.merakiApiKey.trim())
@@ -115,11 +136,27 @@ export async function POST(req: NextRequest) {
           ? body.alertMutedUntil.trim()
           : undefined;
     }
+    if (body.sessionTimeoutDays != null) {
+      const days = Number(body.sessionTimeoutDays);
+      if (days >= 1 && days <= 365) updates.sessionTimeoutDays = days;
+    }
+    if (body.ldapEnabled != null) updates.ldapEnabled = Boolean(body.ldapEnabled);
+    if (typeof body.ldapUrl === "string") updates.ldapUrl = body.ldapUrl.trim();
+    if (typeof body.ldapBaseDn === "string") updates.ldapBaseDn = body.ldapBaseDn.trim();
+    if (typeof body.ldapBindDn === "string") updates.ldapBindDn = body.ldapBindDn.trim();
+    if (typeof body.ldapBindPassword === "string" && body.ldapBindPassword.trim())
+      updates.ldapBindPassword = body.ldapBindPassword.trim();
+    if (typeof body.ldapUserFilter === "string" && body.ldapUserFilter.trim())
+      updates.ldapUserFilter = body.ldapUserFilter.trim();
+    if (typeof body.ldapAdminGroup === "string") updates.ldapAdminGroup = body.ldapAdminGroup.trim();
+    if (typeof body.ldapReadonlyGroup === "string") updates.ldapReadonlyGroup = body.ldapReadonlyGroup.trim();
 
     if (Object.keys(updates).length === 0)
       return NextResponse.json({ error: "No valid fields provided" }, { status: 400 });
 
     writeConfig(updates);
+    const changed = Object.keys(updates).join(", ");
+    appendAuditEntry("settings.save", `Updated: ${changed}`);
     return NextResponse.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
