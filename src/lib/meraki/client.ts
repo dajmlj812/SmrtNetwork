@@ -62,6 +62,9 @@ export const meraki = {
     list: (networkId: string) =>
       merakiFetch<Device[]>(`/networks/${networkId}/devices`),
 
+    listByOrg: (orgId: string) =>
+      merakiFetch<Device[]>(`/organizations/${orgId}/devices`),
+
     getStatuses: (orgId: string) =>
       merakiFetch<Device[]>(`/organizations/${orgId}/devices/statuses`),
 

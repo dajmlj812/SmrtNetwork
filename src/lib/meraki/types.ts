@@ -23,6 +23,7 @@ export interface Device {
   wan2Ip?: string;
   networkId: string;
   firmware: string;
+  productType?: string;
   status?: "online" | "offline" | "alerting" | "dormant";
   lat?: number;
   lng?: number;

@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { meraki } from "@/lib/meraki/client";
 
+function deriveProductType(model: string): string {
+  if (!model) return "other";
+  if (model.startsWith("MR") || model.startsWith("CW")) return "wireless";
+  if (model.startsWith("MS")) return "switch";
+  if (model.startsWith("MX") || model.startsWith("Z")) return "appliance";
+  if (model.startsWith("MG")) return "cellularGateway";
+  if (model.startsWith("MT")) return "sensor";
+  if (model.startsWith("MV")) return "camera";
+  return "other";
+}
+
 export interface FirmwareGroup {
   productType: string;
   firmware: string;
@@ -16,18 +27,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const devices = await meraki.devices.getStatuses(orgId);
+    const devices = await meraki.devices.listByOrg(orgId);
 
     // Group by productType + firmware
     const groupMap = new Map<string, FirmwareGroup>();
 
     for (const device of devices) {
-      // The Meraki API includes productType on device statuses but it's not in our Device type
-      // Access it via type assertion since it's a runtime field
-      const rawDevice = device as typeof device & { productType?: string };
-      const productType =
-        rawDevice.productType ??
-        (device.model ? device.model.slice(0, 2) : "unknown");
+      const productType = device.productType ?? deriveProductType(device.model);
       const firmware = device.firmware ?? "unknown";
       const key = `${productType}::${firmware}`;
 
