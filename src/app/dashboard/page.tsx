@@ -7,6 +7,7 @@ import { StatCards } from "@/components/dashboard/StatCards";
 import { ReportButton } from "@/components/dashboard/ReportButton";
 import { SnapshotChart } from "@/components/dashboard/SnapshotChart";
 import { PollerStatus } from "@/components/dashboard/PollerStatus";
+import { EventFeed } from "@/components/dashboard/EventFeed";
 
 export default function DashboardPage() {
   return (
@@ -18,6 +19,7 @@ export default function DashboardPage() {
       <PollerStatus />
       <StatCards />
       <SnapshotChart />
+      <EventFeed />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <HealthScoreCard />
         <AlertsSummary />

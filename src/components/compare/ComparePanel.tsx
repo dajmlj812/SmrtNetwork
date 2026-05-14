@@ -5,9 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MarkdownOutput } from "@/components/ui/MarkdownOutput";
+import { useNetwork } from "@/lib/context/NetworkContext";
 import type { Network } from "@/lib/meraki/types";
-
-const ORG_ID = "757480";
 
 interface StatsResponse {
   total: number;
@@ -70,49 +69,59 @@ function healthScore(stats: StatsResponse): number {
 }
 
 export function ComparePanel() {
+  const { selectedOrg, networks } = useNetwork();
+  const orgId = selectedOrg?.id ?? "";
+
   const [networkAId, setNetworkAId] = useState<string>("");
   const [networkBId, setNetworkBId] = useState<string>("");
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
 
-  const { data: networks, isLoading: networksLoading } = useQuery<Network[]>({
-    queryKey: ["networks", ORG_ID],
+  // Use networks from context (already fetched), falling back to a query if not ready
+  const { data: fetchedNetworks, isLoading: networksLoading } = useQuery<Network[]>({
+    queryKey: ["networks", orgId],
     queryFn: async () => {
-      const res = await fetch(`/api/meraki/networks?orgId=${ORG_ID}`);
+      const res = await fetch(`/api/meraki/networks?orgId=${orgId}`);
       if (!res.ok) throw new Error("Failed to load networks");
       const data = await res.json() as Network[];
       return [...data].sort((a, b) => a.name.localeCompare(b.name));
     },
+    enabled: !!orgId && networks.length === 0,
     staleTime: 300_000,
   });
 
-  const networkA = networks?.find((n) => n.id === networkAId) ?? null;
-  const networkB = networks?.find((n) => n.id === networkBId) ?? null;
+  // Prefer context networks (already sorted from context); fall back to fetched
+  const displayNetworks = networks.length > 0
+    ? [...networks].sort((a, b) => a.name.localeCompare(b.name))
+    : (fetchedNetworks ?? []);
+
+  const networkA = displayNetworks.find((n) => n.id === networkAId) ?? null;
+  const networkB = displayNetworks.find((n) => n.id === networkBId) ?? null;
 
   const { data: statsA, isLoading: loadingA } = useQuery<StatsResponse>({
-    queryKey: ["stats", networkAId, ORG_ID],
+    queryKey: ["stats", networkAId, orgId],
     queryFn: async () => {
       const res = await fetch(
-        `/api/meraki/stats?networkId=${networkAId}&orgId=${ORG_ID}&networkName=${encodeURIComponent(networkA?.name ?? networkAId)}`
+        `/api/meraki/stats?networkId=${networkAId}&orgId=${orgId}&networkName=${encodeURIComponent(networkA?.name ?? networkAId)}`
       );
       if (!res.ok) throw new Error("Failed to load stats for network A");
       return res.json() as Promise<StatsResponse>;
     },
-    enabled: !!networkAId,
+    enabled: !!networkAId && !!orgId,
     staleTime: 60_000,
   });
 
   const { data: statsB, isLoading: loadingB } = useQuery<StatsResponse>({
-    queryKey: ["stats", networkBId, ORG_ID],
+    queryKey: ["stats", networkBId, orgId],
     queryFn: async () => {
       const res = await fetch(
-        `/api/meraki/stats?networkId=${networkBId}&orgId=${ORG_ID}&networkName=${encodeURIComponent(networkB?.name ?? networkBId)}`
+        `/api/meraki/stats?networkId=${networkBId}&orgId=${orgId}&networkName=${encodeURIComponent(networkB?.name ?? networkBId)}`
       );
       if (!res.ok) throw new Error("Failed to load stats for network B");
       return res.json() as Promise<StatsResponse>;
     },
-    enabled: !!networkBId,
+    enabled: !!networkBId && !!orgId,
     staleTime: 60_000,
   });
 
@@ -156,6 +165,8 @@ export function ComparePanel() {
     "text-white"
   );
 
+  const isLoadingNetworks = networksLoading && networks.length === 0;
+
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Network selectors */}
@@ -168,11 +179,11 @@ export function ComparePanel() {
               setNetworkAId(e.target.value);
               setAnalysis(null);
             }}
-            disabled={networksLoading}
+            disabled={isLoadingNetworks}
             className={selectClass}
           >
             <option value="">Select a network…</option>
-            {networks?.map((n) => (
+            {displayNetworks.map((n) => (
               <option key={n.id} value={n.id} disabled={n.id === networkBId}>
                 {n.name}
               </option>
@@ -187,11 +198,11 @@ export function ComparePanel() {
               setNetworkBId(e.target.value);
               setAnalysis(null);
             }}
-            disabled={networksLoading}
+            disabled={isLoadingNetworks}
             className={selectClass}
           >
             <option value="">Select a network…</option>
-            {networks?.map((n) => (
+            {displayNetworks.map((n) => (
               <option key={n.id} value={n.id} disabled={n.id === networkAId}>
                 {n.name}
               </option>
@@ -212,7 +223,7 @@ export function ComparePanel() {
               )}
             >
               <p className="font-semibold text-sm text-white">{networkA?.name}</p>
-              {(loadingA) && (
+              {loadingA && (
                 <Loader2 size={14} className="animate-spin text-white/40 mx-auto mt-1" />
               )}
               {scoreA !== null && !loadingA && (
@@ -231,7 +242,7 @@ export function ComparePanel() {
               )}
             >
               <p className="font-semibold text-sm text-white">{networkB?.name}</p>
-              {(loadingB) && (
+              {loadingB && (
                 <Loader2 size={14} className="animate-spin text-white/40 mx-auto mt-1" />
               )}
               {scoreB !== null && !loadingB && (

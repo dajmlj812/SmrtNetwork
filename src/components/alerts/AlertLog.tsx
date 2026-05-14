@@ -1,0 +1,135 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { AlertLogEntry } from "@/lib/alert-log";
+
+const CHANNEL_LABELS: Record<AlertLogEntry["channel"], string> = {
+  email: "Email",
+  slack: "Slack",
+  teams: "Teams",
+};
+
+const CHANNEL_COLORS: Record<AlertLogEntry["channel"], string> = {
+  email: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+  slack: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+  teams: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+};
+
+function HealthBadge({ score }: { score: number }) {
+  return (
+    <span
+      className={cn(
+        "font-mono font-semibold",
+        score < 70 ? "text-red-400" : score < 90 ? "text-yellow-400" : "text-green-400"
+      )}
+    >
+      {score}%
+    </span>
+  );
+}
+
+export function AlertLog() {
+  const { data, isLoading, isError } = useQuery<AlertLogEntry[]>({
+    queryKey: ["alert-log"],
+    queryFn: async () => {
+      const res = await fetch("/api/alert-log?limit=50");
+      if (!res.ok) throw new Error("Failed to load alert log");
+      return res.json() as Promise<AlertLogEntry[]>;
+    },
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+
+  return (
+    <div className="rounded-xl border border-white/10 p-5 space-y-4">
+      <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">
+        Alert History
+      </h2>
+
+      {isLoading && (
+        <div className="flex items-center gap-2 text-white/50">
+          <Loader2 size={15} className="animate-spin" />
+          <span className="text-sm">Loading…</span>
+        </div>
+      )}
+
+      {isError && (
+        <p className="text-sm text-red-400">Failed to load alert history.</p>
+      )}
+
+      {!isLoading && !isError && data?.length === 0 && (
+        <p className="text-sm text-white/40">No alerts have fired yet.</p>
+      )}
+
+      {!isLoading && !isError && data && data.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10 text-xs text-white/40 uppercase tracking-wider">
+                <th className="pb-2 text-left font-medium pr-4">Time</th>
+                <th className="pb-2 text-left font-medium pr-4">Network</th>
+                <th className="pb-2 text-center font-medium pr-4">Score</th>
+                <th className="pb-2 text-center font-medium pr-4">Threshold</th>
+                <th className="pb-2 text-center font-medium pr-4">Channel</th>
+                <th className="pb-2 text-center font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((entry) => (
+                <tr
+                  key={entry.id}
+                  className="border-b border-white/5 last:border-0 hover:bg-white/2"
+                >
+                  <td className="py-2.5 pr-4 text-white/60 whitespace-nowrap font-mono text-xs">
+                    {new Date(entry.timestamp).toLocaleString()}
+                  </td>
+                  <td className="py-2.5 pr-4 text-white/80">
+                    {entry.networkName}
+                  </td>
+                  <td className="py-2.5 pr-4 text-center">
+                    <HealthBadge score={entry.healthScore} />
+                  </td>
+                  <td className="py-2.5 pr-4 text-center text-white/50 font-mono">
+                    {entry.threshold}%
+                  </td>
+                  <td className="py-2.5 pr-4 text-center">
+                    <span
+                      className={cn(
+                        "inline-block px-2 py-0.5 rounded-full text-xs border",
+                        CHANNEL_COLORS[entry.channel]
+                      )}
+                    >
+                      {CHANNEL_LABELS[entry.channel]}
+                    </span>
+                  </td>
+                  <td className="py-2.5 text-center">
+                    {entry.success ? (
+                      <CheckCircle
+                        size={15}
+                        className="text-green-400 inline-block"
+                        aria-label="Sent successfully"
+                      />
+                    ) : (
+                      <span
+                        title={entry.error ?? "Unknown error"}
+                        className="cursor-help"
+                      >
+                        <XCircle
+                          size={15}
+                          className="text-red-400 inline-block"
+                          aria-label={entry.error ?? "Failed"}
+                        />
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

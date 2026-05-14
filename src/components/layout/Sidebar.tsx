@@ -20,8 +20,10 @@ import {
   Menu,
   X,
   GitCompare,
+  Search,
 } from "lucide-react";
 import { NetworkSelector } from "@/components/layout/NetworkSelector";
+import { OrgSelector } from "@/components/layout/OrgSelector";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 const nav: { href: Route; label: string; icon: React.ElementType }[] = [
@@ -47,6 +49,10 @@ export function Sidebar() {
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  function openSearch() {
+    window.dispatchEvent(new CustomEvent("smrt:open-search"));
+  }
 
   return (
     <>
@@ -83,10 +89,29 @@ export function Sidebar() {
         {/* Logo */}
         <div className="text-lg font-bold mb-4 px-2">SmrtNetwork</div>
 
+        {/* Org selector (only visible when multiple orgs exist) */}
+        <OrgSelector />
+
         {/* Network selector */}
         <NetworkSelector />
 
         <div className="border-t border-[var(--border)] my-2" />
+
+        {/* Search trigger */}
+        <button
+          onClick={openSearch}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-lg text-sm mb-1",
+            "text-white/40 hover:text-white/70 hover:bg-white/5",
+            "border border-white/10 hover:border-white/20 transition-colors"
+          )}
+        >
+          <Search size={14} className="shrink-0" />
+          <span className="flex-1 text-left truncate">Search…</span>
+          <kbd className="text-[10px] text-white/25 font-mono leading-none">
+            Ctrl+K
+          </kbd>
+        </button>
 
         {/* Nav links — scrollable flex area */}
         <div className="flex flex-col flex-1 overflow-y-auto gap-1">

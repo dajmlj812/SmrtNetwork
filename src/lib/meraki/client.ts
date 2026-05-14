@@ -11,6 +11,7 @@ import type {
   ChannelUtilization,
   WirelessConnectionStats,
   VpnStatus,
+  MerakiEvent,
 } from "./types";
 import { getMerakiApiKey, getMerakiBaseUrl } from "@/lib/config";
 
@@ -115,5 +116,19 @@ export const meraki = {
   vpn: {
     statuses: (orgId: string) =>
       merakiFetch<VpnStatus[]>(`/organizations/${orgId}/appliance/vpn/statuses`),
+  },
+
+  events: {
+    list: async (networkId: string, perPage = 25): Promise<MerakiEvent[]> => {
+      const response = await merakiFetch<{
+        message?: string;
+        pageStartAt?: string;
+        pageEndAt?: string;
+        events: MerakiEvent[];
+      }>(`/networks/${networkId}/events`, {
+        params: { perPage: String(perPage) },
+      });
+      return response.events ?? [];
+    },
   },
 };

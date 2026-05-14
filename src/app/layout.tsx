@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { NetworkProvider } from "@/lib/context/NetworkContext";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { GlobalSearch } from "@/components/layout/GlobalSearch";
 
 export const metadata: Metadata = {
   title: "SmrtNetwork",
@@ -21,6 +22,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <QueryProvider>
             <NetworkProvider>
+              <GlobalSearch />
               <div className="flex h-screen bg-background text-foreground">
                 <Sidebar />
                 <main className="flex-1 overflow-auto p-6 pt-12 md:pt-6">{children}</main>

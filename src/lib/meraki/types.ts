@@ -147,6 +147,19 @@ export interface VpnPeer {
   reachability: "reachable" | "unreachable" | string;
 }
 
+export interface MerakiEvent {
+  occurredAt: string;
+  networkId: string;
+  type: string;
+  description: string;
+  clientId?: string;
+  clientDescription?: string;
+  deviceSerial?: string;
+  deviceName?: string;
+  ssidNumber?: number;
+  eventData?: Record<string, unknown>;
+}
+
 export interface VpnStatus {
   networkId: string;
   networkName: string;

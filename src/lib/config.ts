@@ -16,6 +16,10 @@ export interface AppConfig {
   alertingEnabled?: boolean;
   alertThreshold?: number; // health score below this triggers an alert (default 80)
   alertCooldownMinutes?: number; // minimum minutes between alerts for same network (default 60)
+  slackWebhookUrl?: string;
+  teamsWebhookUrl?: string;
+  reportSchedule?: "none" | "daily" | "weekly";
+  activeOrgId?: string;
 }
 
 export function readConfig(): AppConfig {
@@ -65,11 +69,23 @@ export function getSmtpConfig() {
   };
 }
 
+export function getActiveOrgId(): string {
+  return readConfig().activeOrgId ?? "757480";
+}
+
 export function getAlertingConfig() {
   const c = readConfig();
   return {
     enabled: c.alertingEnabled ?? false,
     threshold: c.alertThreshold ?? 80,
     cooldownMinutes: c.alertCooldownMinutes ?? 60,
+  };
+}
+
+export function getWebhookConfig() {
+  const c = readConfig();
+  return {
+    slack: c.slackWebhookUrl ?? "",
+    teams: c.teamsWebhookUrl ?? "",
   };
 }

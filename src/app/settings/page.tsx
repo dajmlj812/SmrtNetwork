@@ -19,6 +19,9 @@ interface SettingsStatus {
   alertingEnabled: boolean;
   alertThreshold: number;
   alertCooldownMinutes: number;
+  slackWebhookSet: boolean;
+  teamsWebhookSet: boolean;
+  reportSchedule: string;
 }
 
 function KeyField({
@@ -146,6 +149,17 @@ export default function SettingsPage() {
   const [alertThreshold, setAlertThreshold] = useState("80");
   const [alertCooldownMinutes, setAlertCooldownMinutes] = useState("60");
 
+  // Webhook fields
+  const [slackWebhookUrl, setSlackWebhookUrl] = useState("");
+  const [teamsWebhookUrl, setTeamsWebhookUrl] = useState("");
+  const [testingSlack, setTestingSlack] = useState(false);
+  const [testingTeams, setTestingTeams] = useState(false);
+  const [slackTestResult, setSlackTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [teamsTestResult, setTeamsTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  // Report schedule
+  const [reportSchedule, setReportSchedule] = useState("none");
+
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
@@ -159,6 +173,7 @@ export default function SettingsPage() {
         setAlertingEnabled(data.alertingEnabled ?? false);
         setAlertThreshold(String(data.alertThreshold ?? 80));
         setAlertCooldownMinutes(String(data.alertCooldownMinutes ?? 60));
+        setReportSchedule(data.reportSchedule ?? "none");
       })
       .finally(() => setLoading(false));
   }, []);
@@ -182,6 +197,9 @@ export default function SettingsPage() {
     body.alertingEnabled = alertingEnabled;
     if (alertThreshold.trim()) body.alertThreshold = Number(alertThreshold.trim());
     if (alertCooldownMinutes.trim()) body.alertCooldownMinutes = Number(alertCooldownMinutes.trim());
+    if (slackWebhookUrl.trim()) body.slackWebhookUrl = slackWebhookUrl.trim();
+    if (teamsWebhookUrl.trim()) body.teamsWebhookUrl = teamsWebhookUrl.trim();
+    body.reportSchedule = reportSchedule;
 
     try {
       const res = await fetch("/api/settings", {
@@ -198,9 +216,12 @@ export default function SettingsPage() {
       setAlertingEnabled(fresh.alertingEnabled ?? false);
       setAlertThreshold(String(fresh.alertThreshold ?? 80));
       setAlertCooldownMinutes(String(fresh.alertCooldownMinutes ?? 60));
+      setReportSchedule(fresh.reportSchedule ?? "none");
       setMerakiKey("");
       setAnthropicKey("");
       setSmtpPass("");
+      setSlackWebhookUrl("");
+      setTeamsWebhookUrl("");
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -225,11 +246,42 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleTestWebhook(channel: "slack" | "teams") {
+    if (channel === "slack") {
+      setTestingSlack(true);
+      setSlackTestResult(null);
+    } else {
+      setTestingTeams(true);
+      setTeamsTestResult(null);
+    }
+
+    try {
+      const res = await fetch("/api/settings/test-webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      const result = { ok: !!data.ok, message: data.ok ? "Test message sent" : (data.error ?? "Test failed") };
+      if (channel === "slack") setSlackTestResult(result);
+      else setTeamsTestResult(result);
+    } catch (err) {
+      const result = { ok: false, message: err instanceof Error ? err.message : "Unknown error" };
+      if (channel === "slack") setSlackTestResult(result);
+      else setTeamsTestResult(result);
+    } finally {
+      if (channel === "slack") setTestingSlack(false);
+      else setTestingTeams(false);
+    }
+  }
+
   const hasChanges =
     !!merakiKey ||
     !!anthropicKey ||
     !!smtpUser ||
     !!smtpPass ||
+    !!slackWebhookUrl ||
+    !!teamsWebhookUrl ||
     (status && merakiBaseUrl !== status.merakiBaseUrl) ||
     (status && smtpHost !== (status.smtpHost ?? "")) ||
     (status && smtpPort !== String(status.smtpPort ?? 587)) ||
@@ -237,7 +289,8 @@ export default function SettingsPage() {
     (status && smtpTo !== (status.smtpTo ?? "")) ||
     (status && alertingEnabled !== (status.alertingEnabled ?? false)) ||
     (status && alertThreshold !== String(status.alertThreshold ?? 80)) ||
-    (status && alertCooldownMinutes !== String(status.alertCooldownMinutes ?? 60));
+    (status && alertCooldownMinutes !== String(status.alertCooldownMinutes ?? 60)) ||
+    (status && reportSchedule !== (status.reportSchedule ?? "none"));
 
   return (
     <div className="max-w-xl space-y-6">
@@ -416,6 +469,135 @@ export default function SettingsPage() {
                     ? <CheckCircle size={13} />
                     : <AlertCircle size={13} />}
                   {smtpTestResult.message}
+                </span>
+              )}
+            </div>
+
+            {/* Scheduled Reports */}
+            <div className="flex items-center justify-between pt-2 border-t border-white/10">
+              <div>
+                <label htmlFor="reportSchedule" className="text-sm font-medium text-white/80">
+                  Auto-send report
+                </label>
+                <p className="text-xs text-white/40 mt-0.5">
+                  Automatically emails an HTML report on a schedule. Requires SMTP to be configured.
+                </p>
+              </div>
+              <select
+                id="reportSchedule"
+                value={reportSchedule}
+                onChange={(e) => setReportSchedule(e.target.value)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-sm",
+                  "bg-white/5 border border-white/10",
+                  "focus:outline-none focus:ring-1 focus:ring-blue-500"
+                )}
+              >
+                <option value="none">Off</option>
+                <option value="daily">Daily at 7am</option>
+                <option value="weekly">Monday at 7am</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Notifications (Slack + Teams) */}
+          <div className="rounded-xl border border-white/10 p-5 space-y-4">
+            <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">
+              Notifications
+            </h2>
+
+            {/* Slack */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label htmlFor="slackWebhookUrl" className="text-sm font-medium text-white/80">
+                  Slack Webhook URL
+                </label>
+                {status.slackWebhookSet && (
+                  <span className="flex items-center gap-1 text-xs text-green-400">
+                    <CheckCircle size={12} />
+                    Configured
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  id="slackWebhookUrl"
+                  type="text"
+                  value={slackWebhookUrl}
+                  onChange={(e) => setSlackWebhookUrl(e.target.value)}
+                  placeholder={status.slackWebhookSet ? "Enter new URL to replace…" : "https://hooks.slack.com/services/…"}
+                  className={cn(
+                    "flex-1 px-3 py-2 rounded-lg text-sm font-mono",
+                    "bg-white/5 border border-white/10",
+                    "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  )}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleTestWebhook("slack")}
+                  disabled={testingSlack || !status.slackWebhookSet}
+                  title={!status.slackWebhookSet ? "Save Slack webhook URL first" : undefined}
+                  className="px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 disabled:opacity-40 text-sm transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  {testingSlack && <Loader2 size={12} className="animate-spin" />}
+                  {testingSlack ? "Sending…" : "Test"}
+                </button>
+              </div>
+              {slackTestResult && (
+                <span className={cn(
+                  "flex items-center gap-1.5 text-xs",
+                  slackTestResult.ok ? "text-green-400" : "text-red-400"
+                )}>
+                  {slackTestResult.ok ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                  {slackTestResult.message}
+                </span>
+              )}
+            </div>
+
+            {/* Teams */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label htmlFor="teamsWebhookUrl" className="text-sm font-medium text-white/80">
+                  Teams Webhook URL
+                </label>
+                {status.teamsWebhookSet && (
+                  <span className="flex items-center gap-1 text-xs text-green-400">
+                    <CheckCircle size={12} />
+                    Configured
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  id="teamsWebhookUrl"
+                  type="text"
+                  value={teamsWebhookUrl}
+                  onChange={(e) => setTeamsWebhookUrl(e.target.value)}
+                  placeholder={status.teamsWebhookSet ? "Enter new URL to replace…" : "https://outlook.office.com/webhook/…"}
+                  className={cn(
+                    "flex-1 px-3 py-2 rounded-lg text-sm font-mono",
+                    "bg-white/5 border border-white/10",
+                    "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  )}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleTestWebhook("teams")}
+                  disabled={testingTeams || !status.teamsWebhookSet}
+                  title={!status.teamsWebhookSet ? "Save Teams webhook URL first" : undefined}
+                  className="px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 disabled:opacity-40 text-sm transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  {testingTeams && <Loader2 size={12} className="animate-spin" />}
+                  {testingTeams ? "Sending…" : "Test"}
+                </button>
+              </div>
+              {teamsTestResult && (
+                <span className={cn(
+                  "flex items-center gap-1.5 text-xs",
+                  teamsTestResult.ok ? "text-green-400" : "text-red-400"
+                )}>
+                  {teamsTestResult.ok ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                  {teamsTestResult.message}
                 </span>
               )}
             </div>

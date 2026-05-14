@@ -7,6 +7,8 @@ import {
   getAnthropicApiKey,
   getSmtpConfig,
   getAlertingConfig,
+  getWebhookConfig,
+  getActiveOrgId,
   maskKey,
 } from "@/lib/config";
 
@@ -17,6 +19,8 @@ export async function GET() {
   const smtp = getSmtpConfig();
   const smtpConfigured = !!(smtp.host && smtp.user && smtp.pass);
   const alerting = getAlertingConfig();
+  const webhooks = getWebhookConfig();
+  const config = readConfig();
 
   return NextResponse.json({
     merakiApiKeySet: !!merakiKey,
@@ -24,7 +28,7 @@ export async function GET() {
     merakiBaseUrl: baseUrl,
     anthropicApiKeySet: !!anthropicKey,
     anthropicApiKeyMasked: maskKey(anthropicKey),
-    source: Object.keys(readConfig()).length > 0 ? "config-file" : "env",
+    source: Object.keys(config).length > 0 ? "config-file" : "env",
     smtpConfigured,
     smtpHost: smtp.host,
     smtpPort: smtp.port,
@@ -33,6 +37,10 @@ export async function GET() {
     alertingEnabled: alerting.enabled,
     alertThreshold: alerting.threshold,
     alertCooldownMinutes: alerting.cooldownMinutes,
+    slackWebhookSet: !!webhooks.slack,
+    teamsWebhookSet: !!webhooks.teams,
+    reportSchedule: config.reportSchedule ?? "none",
+    activeOrgId: getActiveOrgId(),
   });
 }
 
@@ -51,6 +59,10 @@ export async function POST(req: NextRequest) {
       alertingEnabled?: boolean;
       alertThreshold?: number;
       alertCooldownMinutes?: number;
+      slackWebhookUrl?: string;
+      teamsWebhookUrl?: string;
+      reportSchedule?: string;
+      activeOrgId?: string;
     };
 
     const updates: Partial<{
@@ -66,6 +78,10 @@ export async function POST(req: NextRequest) {
       alertingEnabled: boolean;
       alertThreshold: number;
       alertCooldownMinutes: number;
+      slackWebhookUrl: string;
+      teamsWebhookUrl: string;
+      reportSchedule: "none" | "daily" | "weekly";
+      activeOrgId: string;
     }> = {};
 
     if (body.merakiApiKey?.trim()) updates.merakiApiKey = body.merakiApiKey.trim();
@@ -80,6 +96,15 @@ export async function POST(req: NextRequest) {
     if (body.alertingEnabled != null) updates.alertingEnabled = Boolean(body.alertingEnabled);
     if (body.alertThreshold != null) updates.alertThreshold = Number(body.alertThreshold);
     if (body.alertCooldownMinutes != null) updates.alertCooldownMinutes = Number(body.alertCooldownMinutes);
+    if (body.slackWebhookUrl?.trim()) updates.slackWebhookUrl = body.slackWebhookUrl.trim();
+    if (body.teamsWebhookUrl?.trim()) updates.teamsWebhookUrl = body.teamsWebhookUrl.trim();
+    if (body.reportSchedule != null) {
+      const val = body.reportSchedule;
+      if (val === "none" || val === "daily" || val === "weekly") {
+        updates.reportSchedule = val;
+      }
+    }
+    if (body.activeOrgId?.trim()) updates.activeOrgId = body.activeOrgId.trim();
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "No valid fields provided" }, { status: 400 });
