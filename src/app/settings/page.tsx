@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle, AlertCircle, Eye, EyeOff, Loader2, Mail } from "lucide-react";
+import { CheckCircle, AlertCircle, Eye, EyeOff, Loader2, Mail, LogOut, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SettingsStatus {
@@ -22,6 +22,7 @@ interface SettingsStatus {
   slackWebhookSet: boolean;
   teamsWebhookSet: boolean;
   reportSchedule: string;
+  appPasswordSet: boolean;
 }
 
 function KeyField({
@@ -160,6 +161,13 @@ export default function SettingsPage() {
   // Report schedule
   const [reportSchedule, setReportSchedule] = useState("none");
 
+  // Security (password)
+  const [newPass, setNewPass] = useState("");
+  const [confirmPass, setConfirmPass] = useState("");
+  const [passError, setPassError] = useState<string | null>(null);
+  const [passSaved, setPassSaved] = useState(false);
+  const [savingPass, setSavingPass] = useState(false);
+
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
@@ -275,6 +283,66 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleSetPassword() {
+    if (!newPass) {
+      setPassError("Password cannot be empty");
+      return;
+    }
+    if (newPass !== confirmPass) {
+      setPassError("Passwords do not match");
+      return;
+    }
+    setSavingPass(true);
+    setPassError(null);
+    setPassSaved(false);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword: newPass }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!data.ok) throw new Error(data.error ?? "Failed to set password");
+      setNewPass("");
+      setConfirmPass("");
+      setPassSaved(true);
+      setTimeout(() => setPassSaved(false), 3000);
+      // Refresh status
+      const fresh = await fetch("/api/settings").then((r) => r.json()) as SettingsStatus;
+      setStatus(fresh);
+    } catch (err) {
+      setPassError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setSavingPass(false);
+    }
+  }
+
+  async function handleRemovePassword() {
+    setSavingPass(true);
+    setPassError(null);
+    setPassSaved(false);
+    try {
+      await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword: "" }),
+      });
+      setPassSaved(true);
+      setTimeout(() => setPassSaved(false), 3000);
+      const fresh = await fetch("/api/settings").then((r) => r.json()) as SettingsStatus;
+      setStatus(fresh);
+    } catch (err) {
+      setPassError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setSavingPass(false);
+    }
+  }
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
+  }
+
   const hasChanges =
     !!merakiKey ||
     !!anthropicKey ||
@@ -294,15 +362,26 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        {status && (
-          <p className="text-xs text-white/30 mt-1">
-            Keys are stored in{" "}
-            <span className="font-mono">smrt-config.json</span> and take effect
-            immediately — no restart needed.
-          </p>
-        )}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Settings</h1>
+          {status && (
+            <p className="text-xs text-white/30 mt-1">
+              Keys are stored in{" "}
+              <span className="font-mono">smrt-config.json</span> and take effect
+              immediately — no restart needed.
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors mt-1"
+          title="Sign out"
+        >
+          <LogOut size={13} />
+          Sign Out
+        </button>
       </div>
 
       {loading && (
@@ -665,6 +744,100 @@ export default function SettingsPage() {
                 />
                 <p className="text-xs text-white/30">Minimum minutes between alerts for same network. Default: 60</p>
               </div>
+            </div>
+          </div>
+
+          {/* Security */}
+          <div className="rounded-xl border border-white/10 p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider flex items-center gap-2">
+                <Lock size={14} />
+                Security
+              </h2>
+              {status.appPasswordSet ? (
+                <span className="flex items-center gap-1 text-xs text-green-400">
+                  <CheckCircle size={12} />
+                  Password protection: Enabled
+                </span>
+              ) : (
+                <span className="text-xs text-white/30">
+                  Not set — app is open
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-white/40">
+              Set a password to protect access to SmrtNetwork. Leave blank to disable.
+            </p>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label htmlFor="newPass" className="text-sm font-medium text-white/80 block">
+                  New password
+                </label>
+                <input
+                  id="newPass"
+                  type="password"
+                  value={newPass}
+                  onChange={(e) => setNewPass(e.target.value)}
+                  placeholder="New password…"
+                  className={cn(
+                    "w-full px-3 py-2 rounded-lg text-sm",
+                    "bg-white/5 border border-white/10",
+                    "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  )}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="confirmPass" className="text-sm font-medium text-white/80 block">
+                  Confirm password
+                </label>
+                <input
+                  id="confirmPass"
+                  type="password"
+                  value={confirmPass}
+                  onChange={(e) => setConfirmPass(e.target.value)}
+                  placeholder="Confirm password…"
+                  className={cn(
+                    "w-full px-3 py-2 rounded-lg text-sm",
+                    "bg-white/5 border border-white/10",
+                    "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  )}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={handleSetPassword}
+                disabled={savingPass}
+                className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                {savingPass && <Loader2 size={13} className="animate-spin" />}
+                Set Password
+              </button>
+              {status.appPasswordSet && (
+                <button
+                  type="button"
+                  onClick={handleRemovePassword}
+                  disabled={savingPass}
+                  className="px-4 py-1.5 rounded-lg border border-white/15 hover:border-red-500/40 hover:text-red-400 disabled:opacity-40 text-sm transition-colors"
+                >
+                  Remove Password
+                </button>
+              )}
+              {passSaved && (
+                <span className="flex items-center gap-1.5 text-sm text-green-400">
+                  <CheckCircle size={13} />
+                  Saved
+                </span>
+              )}
+              {passError && (
+                <span className="flex items-center gap-1.5 text-sm text-red-400">
+                  <AlertCircle size={13} />
+                  {passError}
+                </span>
+              )}
             </div>
           </div>
 

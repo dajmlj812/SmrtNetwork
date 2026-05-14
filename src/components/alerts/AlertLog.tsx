@@ -1,9 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AlertLogEntry } from "@/lib/alert-log";
+import { toCSV, downloadCSV } from "@/lib/csv";
 
 const CHANNEL_LABELS: Record<AlertLogEntry["channel"], string> = {
   email: "Email",
@@ -30,6 +31,29 @@ function HealthBadge({ score }: { score: number }) {
   );
 }
 
+function handleExportAlertLog(data: AlertLogEntry[]) {
+  const rows = data.map((e) => ({
+    Timestamp: e.timestamp,
+    Network: e.networkName,
+    "Health Score": e.healthScore,
+    Threshold: e.threshold,
+    Channel: e.channel,
+    Success: e.success ? "Yes" : "No",
+    Error: e.error ?? "",
+  }));
+  const columns = [
+    { key: "Timestamp", header: "Timestamp" },
+    { key: "Network", header: "Network" },
+    { key: "Health Score", header: "Health Score" },
+    { key: "Threshold", header: "Threshold" },
+    { key: "Channel", header: "Channel" },
+    { key: "Success", header: "Success" },
+    { key: "Error", header: "Error" },
+  ];
+  const date = new Date().toISOString().slice(0, 10);
+  downloadCSV(toCSV(rows, columns), `alert-log-${date}.csv`);
+}
+
 export function AlertLog() {
   const { data, isLoading, isError } = useQuery<AlertLogEntry[]>({
     queryKey: ["alert-log"],
@@ -44,9 +68,22 @@ export function AlertLog() {
 
   return (
     <div className="rounded-xl border border-white/10 p-5 space-y-4">
-      <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">
-        Alert History
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">
+          Alert History
+        </h2>
+        {data && data.length > 0 && (
+          <button
+            type="button"
+            onClick={() => handleExportAlertLog(data)}
+            className="flex items-center gap-1 text-xs text-white/40 hover:text-white/70 transition-colors"
+            title="Export alert log as CSV"
+          >
+            <Download size={13} />
+            CSV
+          </button>
+        )}
+      </div>
 
       {isLoading && (
         <div className="flex items-center gap-2 text-white/50">

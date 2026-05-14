@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useNetwork } from "@/lib/context/NetworkContext";
 import { cn } from "@/lib/utils";
 import type { Device, Client } from "@/lib/meraki/types";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, Download } from "lucide-react";
+import { toCSV, downloadCSV } from "@/lib/csv";
 import { MarkdownOutput } from "@/components/ui/MarkdownOutput";
 
 interface MergedDevice extends Device {
@@ -148,6 +149,32 @@ export function DeviceList() {
     staleTime: 60_000,
   });
 
+  function handleExportCSV() {
+    const rows = merged.map((d) => ({
+      Name: d.name || d.serial,
+      Serial: d.serial,
+      Model: d.model,
+      Status: d.status ?? "",
+      "LAN IP": d.lanIp ?? "",
+      "WAN IP": d.wan1Ip ?? "",
+      Clients: d.clientCount,
+      Firmware: d.firmware,
+    }));
+    const columns = [
+      { key: "Name", header: "Name" },
+      { key: "Serial", header: "Serial" },
+      { key: "Model", header: "Model" },
+      { key: "Status", header: "Status" },
+      { key: "LAN IP", header: "LAN IP" },
+      { key: "WAN IP", header: "WAN IP" },
+      { key: "Clients", header: "Clients" },
+      { key: "Firmware", header: "Firmware" },
+    ];
+    const date = new Date().toISOString().slice(0, 10);
+    const filename = `devices-${selectedNetwork?.name ?? "network"}-${date}.csv`;
+    downloadCSV(toCSV(rows, columns), filename);
+  }
+
   if (!selectedNetwork) return null;
 
   const isLoading = loadingDevices || loadingStatuses || loadingClients;
@@ -189,10 +216,23 @@ export function DeviceList() {
   return (
     <>
       <div className="rounded-xl border border-white/10 overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/10">
-          <h2 className="font-semibold text-sm">Devices</h2>
-          {selectedNetwork && (
-            <p className="text-xs text-white/40 mt-0.5">{selectedNetwork.name}</p>
+        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-semibold text-sm">Devices</h2>
+            {selectedNetwork && (
+              <p className="text-xs text-white/40 mt-0.5">{selectedNetwork.name}</p>
+            )}
+          </div>
+          {merged.length > 0 && (
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="flex items-center gap-1 text-xs text-white/40 hover:text-white/70 transition-colors"
+              title="Export devices as CSV"
+            >
+              <Download size={13} />
+              CSV
+            </button>
           )}
         </div>
 

@@ -21,6 +21,8 @@ import {
   X,
   GitCompare,
   Search,
+  Cpu,
+  LogOut,
 } from "lucide-react";
 import { NetworkSelector } from "@/components/layout/NetworkSelector";
 import { OrgSelector } from "@/components/layout/OrgSelector";
@@ -32,6 +34,7 @@ const nav: { href: Route; label: string; icon: React.ElementType }[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/chat" as Route, label: "Ask AI", icon: MessageSquare },
   { href: "/devices", label: "Devices", icon: Monitor },
+  { href: "/firmware" as Route, label: "Firmware", icon: Cpu },
   { href: "/clients" as Route, label: "Clients", icon: Laptop },
   { href: "/network", label: "Traffic", icon: Network },
   { href: "/switches" as Route, label: "Switches", icon: Layers },
@@ -132,9 +135,22 @@ export function Sidebar() {
           ))}
         </div>
 
-        {/* Footer: theme toggle + version */}
+        {/* Footer: theme toggle + logout + version */}
         <div className="border-t border-[var(--border)] mt-2 pt-3 flex items-center justify-between px-1">
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={async () => {
+                await fetch("/api/auth/logout", { method: "POST" });
+                window.location.href = "/login";
+              }}
+              className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/5 transition-colors"
+              title="Sign out"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
           <span className="text-xs text-white/20">SmrtNetwork v0.1</span>
         </div>
       </aside>

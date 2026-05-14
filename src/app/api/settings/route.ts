@@ -41,6 +41,7 @@ export async function GET() {
     teamsWebhookSet: !!webhooks.teams,
     reportSchedule: config.reportSchedule ?? "none",
     activeOrgId: getActiveOrgId(),
+    appPasswordSet: !!config.appPasswordHash,
   });
 }
 

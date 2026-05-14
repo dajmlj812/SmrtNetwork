@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronUp, ChevronDown, ChevronsUpDown, Search, Loader2 } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronsUpDown, Search, Loader2, Download } from "lucide-react";
 import { useNetwork } from "@/lib/context/NetworkContext";
 import { formatBytes, cn } from "@/lib/utils";
 import type { Client } from "@/lib/meraki/types";
+import { toCSV, downloadCSV } from "@/lib/csv";
 
 const TIMESPANS = [
   { label: "Last hour", value: 3600 },
@@ -75,6 +76,40 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
     enabled: !!selectedNetwork,
     staleTime: 60_000,
   });
+
+  function handleExportCSV() {
+    const rows = sorted.map((c) => ({
+      Name: c.description?.trim() || c.manufacturer || c.mac,
+      MAC: c.mac,
+      IP: c.ip ?? "",
+      Manufacturer: c.manufacturer ?? "",
+      OS: c.os ?? "",
+      SSID: c.ssid ?? "",
+      VLAN: c.vlan ?? "",
+      AP: c.recentDeviceName ?? "",
+      "Last Seen": c.lastSeen,
+      "Total Usage (bytes)": c.usage.sent + c.usage.recv,
+      "Download (bytes)": c.usage.recv,
+      "Upload (bytes)": c.usage.sent,
+    }));
+    const columns = [
+      { key: "Name", header: "Name" },
+      { key: "MAC", header: "MAC" },
+      { key: "IP", header: "IP" },
+      { key: "Manufacturer", header: "Manufacturer" },
+      { key: "OS", header: "OS" },
+      { key: "SSID", header: "SSID" },
+      { key: "VLAN", header: "VLAN" },
+      { key: "AP", header: "AP" },
+      { key: "Last Seen", header: "Last Seen" },
+      { key: "Total Usage (bytes)", header: "Total Usage (bytes)" },
+      { key: "Download (bytes)", header: "Download (bytes)" },
+      { key: "Upload (bytes)", header: "Upload (bytes)" },
+    ];
+    const date = new Date().toISOString().slice(0, 10);
+    const filename = `clients-${selectedNetwork?.name ?? "network"}-${date}.csv`;
+    downloadCSV(toCSV(rows, columns), filename);
+  }
 
   function handleSort(key: SortKey) {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -155,6 +190,17 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
               {sorted.length} {sorted.length === 1 ? "client" : "clients"}
               {search && clients.length !== sorted.length && ` of ${clients.length}`}
             </span>
+          )}
+          {sorted.length > 0 && (
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="flex items-center gap-1 text-xs text-white/40 hover:text-white/70 transition-colors"
+              title="Export visible clients as CSV"
+            >
+              <Download size={13} />
+              CSV
+            </button>
           )}
         </div>
       </div>

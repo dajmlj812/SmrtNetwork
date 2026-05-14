@@ -21,6 +21,7 @@ export interface AppConfig {
   teamsWebhookUrl?: string;
   reportSchedule?: "none" | "daily" | "weekly";
   activeOrgId?: string;
+  appPasswordHash?: string;
 }
 
 export function readConfig(): AppConfig {

@@ -1,0 +1,212 @@
+"use client";
+
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useNetwork } from "@/lib/context/NetworkContext";
+import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { FirmwareGroup } from "@/app/api/meraki/firmware/route";
+
+function SkeletonRow() {
+  return (
+    <tr>
+      {Array.from({ length: 3 }).map((_, i) => (
+        <td key={i} className="px-4 py-2.5">
+          <div className="h-4 bg-white/10 rounded animate-pulse" />
+        </td>
+      ))}
+    </tr>
+  );
+}
+
+function ProductTypeSection({
+  productType,
+  groups,
+}: {
+  productType: string;
+  groups: FirmwareGroup[];
+}) {
+  const [open, setOpen] = useState(true);
+
+  const maxCount = Math.max(...groups.map((g) => g.count));
+  const totalDevices = groups.reduce((sum, g) => sum + g.count, 0);
+  const hasMultipleVersions = groups.length > 1;
+
+  return (
+    <div className="rounded-xl border border-white/10 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-5 py-4 border-b border-white/10 hover:bg-white/[0.02] transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          {open ? (
+            <ChevronDown size={14} className="text-white/40" />
+          ) : (
+            <ChevronRight size={14} className="text-white/40" />
+          )}
+          <span className="font-semibold text-sm uppercase tracking-wide text-white/80">
+            {productType}
+          </span>
+          {hasMultipleVersions && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">
+              {groups.length} versions
+            </span>
+          )}
+        </div>
+        <span className="text-xs text-white/30">{totalDevices} device{totalDevices !== 1 ? "s" : ""}</span>
+      </button>
+
+      {open && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/5">
+                <th className="px-5 py-2 text-left text-xs text-white/40 font-medium">
+                  Firmware Version
+                </th>
+                <th className="px-5 py-2 text-left text-xs text-white/40 font-medium">
+                  Device Count
+                </th>
+                <th className="px-5 py-2 text-left text-xs text-white/40 font-medium">
+                  Networks
+                </th>
+                <th className="px-5 py-2 text-left text-xs text-white/40 font-medium">
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {groups.map((group) => {
+                const isBaseline = group.count === maxCount;
+                return (
+                  <tr
+                    key={group.firmware}
+                    className="border-b border-white/5 last:border-0 hover:bg-white/[0.02]"
+                  >
+                    <td className="px-5 py-3 font-mono text-xs text-white/80">
+                      {group.firmware}
+                    </td>
+                    <td className="px-5 py-3 text-white/70">
+                      {group.count}
+                    </td>
+                    <td className="px-5 py-3 text-white/50">
+                      {group.networks.length}
+                    </td>
+                    <td className="px-5 py-3">
+                      {isBaseline ? (
+                        <span
+                          className={cn(
+                            "inline-block px-2 py-0.5 rounded-full text-xs border",
+                            hasMultipleVersions
+                              ? "bg-green-500/15 text-green-400 border-green-500/30"
+                              : "bg-white/5 text-white/30 border-white/10"
+                          )}
+                        >
+                          {hasMultipleVersions ? "Baseline (most common)" : "Uniform"}
+                        </span>
+                      ) : (
+                        <span className="inline-block px-2 py-0.5 rounded-full text-xs border bg-yellow-500/15 text-yellow-400 border-yellow-500/30">
+                          Potentially outdated
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function FirmwareAudit() {
+  const { selectedOrg } = useNetwork();
+  const orgId = selectedOrg?.id;
+
+  const { data, isLoading, isError, error } = useQuery<FirmwareGroup[]>({
+    queryKey: ["firmware-audit", orgId],
+    queryFn: async () => {
+      const res = await fetch(`/api/meraki/firmware?orgId=${orgId}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? "Failed to load firmware data");
+      }
+      return res.json() as Promise<FirmwareGroup[]>;
+    },
+    enabled: !!orgId,
+    staleTime: 5 * 60_000,
+  });
+
+  if (!orgId) {
+    return (
+      <div className="rounded-xl border border-white/10 p-5">
+        <p className="text-sm text-white/40">No organization selected.</p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="rounded-xl border border-white/10 overflow-hidden">
+        <div className="px-5 py-4 border-b border-white/10">
+          <div className="h-4 w-32 bg-white/10 rounded animate-pulse" />
+        </div>
+        <table className="w-full text-sm">
+          <tbody>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <SkeletonRow key={i} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-5">
+        <p className="text-sm text-red-400">
+          {error instanceof Error ? error.message : "Failed to load firmware data"}
+        </p>
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="rounded-xl border border-white/10 p-5">
+        <p className="text-sm text-white/40">No device data available.</p>
+      </div>
+    );
+  }
+
+  // Group FirmwareGroups by productType
+  const byProductType = new Map<string, FirmwareGroup[]>();
+  for (const group of data) {
+    const existing = byProductType.get(group.productType);
+    if (existing) {
+      existing.push(group);
+    } else {
+      byProductType.set(group.productType, [group]);
+    }
+  }
+
+  const productTypes = Array.from(byProductType.entries()).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
+
+  return (
+    <div className="space-y-4">
+      {productTypes.map(([productType, groups]) => (
+        <ProductTypeSection
+          key={productType}
+          productType={productType}
+          groups={groups}
+        />
+      ))}
+    </div>
+  );
+}

@@ -8,7 +8,7 @@
  */
 
 import { execSync } from "child_process";
-import { cpSync, mkdirSync, writeFileSync, copyFileSync, existsSync, statSync } from "fs";
+import { cpSync, mkdirSync, writeFileSync, copyFileSync, existsSync, statSync, readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { execPath } from "process";
@@ -17,6 +17,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 const standalone = join(root, ".next", "standalone");
 const dist = join(root, "dist");
+
+const { version } = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 
 if (!existsSync(standalone)) {
   console.error("ERROR: .next/standalone not found. Run `npm run build` first.");
@@ -78,7 +80,7 @@ async function main() {
 
   console.log('');
   console.log('  ╔══════════════════════════════════════╗');
-  console.log('  ║           SmrtNetwork v0.1           ║');
+  console.log('  ║       SmrtNetwork v' + version.padEnd(18) + '║');
   console.log('  ╚══════════════════════════════════════╝');
   console.log('');
   console.log('  URL        : ' + url);
@@ -119,6 +121,23 @@ execSync(
 );
 
 const sizeMB = (statSync(output).size / 1024 / 1024).toFixed(0);
-console.log(`\n✅  dist/SmrtNetwork.exe  (${sizeMB} MB)`);
-console.log("    Copy anywhere — double-click to run. No Node.js needed.");
+
+// Create silent launcher VBS script
+const vbsPath = join(dist, "SmrtNetwork-Silent.vbs");
+writeFileSync(
+  vbsPath,
+  [
+    'Set oShell = CreateObject("WScript.Shell")',
+    'sDir = Left(WScript.ScriptFullName, InStrRev(WScript.ScriptFullName, "\\"))',
+    'oShell.Run Chr(34) & sDir & "SmrtNetwork.exe" & Chr(34), 0, False',
+  ].join("\r\n"),
+  "utf8"
+);
+console.log("    SmrtNetwork-Silent.vbs  (double-click to run without console window)");
+
+console.log(`\n✅  dist/SmrtNetwork.exe          (${sizeMB} MB) — double-click to run with console`);
+console.log("    dist/SmrtNetwork-Silent.vbs   — double-click to run silently (no console window)");
 console.log(`    Config stored in %APPDATA%\\SmrtNetwork\\`);
+console.log("");
+console.log("    To run at Windows startup: copy SmrtNetwork-Silent.vbs to:");
+console.log("    %APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\");
