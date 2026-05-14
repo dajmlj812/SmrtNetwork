@@ -10,6 +10,8 @@ import {
 import { writeSnapshot } from "./snapshots";
 import { writeAlertLogEntry } from "./alert-log";
 import { generateReportHtml } from "./report";
+import { writeInfluxDbMetric } from "./influxdb";
+import { createServiceNowIncident } from "./servicenow";
 import nodemailer from "nodemailer";
 
 const ORG_ID = "757480";
@@ -19,7 +21,9 @@ interface AlertStats {
   online: number;
   offline: number;
   alerting: number;
+  dormant: number;
   total: number;
+  clientCount: number;
 }
 
 async function sendEmailAlert(
@@ -152,9 +156,131 @@ async function sendTeamsAlert(
   writeAlertLogEntry({ networkId, networkName, healthScore, threshold, channel: "teams", success, error });
 }
 
+async function sendHealthWebhook(
+  networkName: string,
+  networkId: string,
+  healthScore: number,
+  threshold: number,
+  stats: AlertStats
+): Promise<void> {
+  const { health } = getWebhookConfig();
+  if (health.length === 0) return;
+
+  const payload = {
+    event: "health_alert",
+    timestamp: new Date().toISOString(),
+    network: { id: networkId, name: networkName, healthScore, threshold },
+    stats: {
+      online: stats.online,
+      offline: stats.offline,
+      alerting: stats.alerting,
+      dormant: stats.dormant,
+      total: stats.total,
+      clientCount: stats.clientCount,
+    },
+  };
+
+  let success = true;
+  let error: string | undefined;
+
+  for (const url of health) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`Webhook ${res.status}: ${await res.text().catch(() => "")}`);
+    } catch (err) {
+      success = false;
+      error = err instanceof Error ? err.message : String(err);
+      console.error("[Poller] Health webhook failed:", error);
+    }
+  }
+
+  writeAlertLogEntry({ networkId, networkName, healthScore, threshold, channel: "webhook", success, error });
+}
+
+async function sendServiceNowAlert(
+  networkName: string,
+  networkId: string,
+  healthScore: number,
+  threshold: number,
+  stats: AlertStats
+): Promise<void> {
+  const cfg = readConfig();
+  if (!cfg.serviceNowEnabled || !cfg.serviceNowInstanceUrl || !cfg.serviceNowUsername || !cfg.serviceNowPassword) return;
+
+  const shortDescription = `Network health alert: ${networkName} — score ${healthScore}% (threshold: ${threshold}%)`;
+  const description = [
+    `Network: ${networkName} (${networkId})`,
+    `Health Score: ${healthScore}% (threshold: ${threshold}%)`,
+    `Online: ${stats.online} | Offline: ${stats.offline} | Alerting: ${stats.alerting} | Total: ${stats.total}`,
+    `Clients: ${stats.clientCount}`,
+    `Time: ${new Date().toISOString()}`,
+    `\nDetected by SmrtNetwork automated poller.`,
+  ].join("\n");
+
+  const result = await createServiceNowIncident({
+    instanceUrl: cfg.serviceNowInstanceUrl,
+    username: cfg.serviceNowUsername,
+    password: cfg.serviceNowPassword,
+    shortDescription,
+    description,
+    assignmentGroup: cfg.serviceNowAssignmentGroup,
+    category: cfg.serviceNowCategory,
+    cmdbCi: cfg.serviceNowCmdbCi,
+  });
+
+  if (result.success) {
+    console.log(`[Poller] ServiceNow incident created: ${result.incidentNumber ?? result.sysId}`);
+  } else {
+    console.error("[Poller] ServiceNow incident failed:", result.error);
+  }
+
+  writeAlertLogEntry({ networkId, networkName, healthScore, threshold, channel: "servicenow", success: result.success, error: result.error });
+}
+
+async function writeInfluxDbHealthMetric(
+  networkId: string,
+  networkName: string,
+  healthScore: number,
+  stats: AlertStats
+): Promise<void> {
+  const cfg = readConfig();
+  if (!cfg.influxDbEnabled || !cfg.influxDbUrl) return;
+
+  const result = await writeInfluxDbMetric({
+    url: cfg.influxDbUrl,
+    mode: cfg.influxDbMode ?? "v2",
+    org: cfg.influxDbOrg,
+    bucket: cfg.influxDbBucket,
+    token: cfg.influxDbToken,
+    database: cfg.influxDbDatabase,
+    username: cfg.influxDbUsername,
+    password: cfg.influxDbPassword,
+    networkId,
+    networkName,
+    healthScore,
+    online: stats.online,
+    offline: stats.offline,
+    alerting: stats.alerting,
+    dormant: stats.dormant,
+    total: stats.total,
+    clientCount: stats.clientCount,
+  });
+
+  if (!result.success) {
+    console.error("[Poller] InfluxDB write failed:", result.error);
+  }
+}
+
 async function pollNetworks(): Promise<void> {
   const config = getAlertingConfig();
-  if (!config.enabled) return;
+  const cfg = readConfig();
+  const influxEnabled = cfg.influxDbEnabled && !!cfg.influxDbUrl;
+
+  if (!config.enabled && !influxEnabled) return;
 
   try {
     const [networks, statuses] = await Promise.all([
@@ -173,7 +299,6 @@ async function pollNetworks(): Promise<void> {
       const dormant  = devices.filter((d) => d.status === "dormant").length;
       const healthScore = Math.round((online / total) * 100);
 
-      // Fetch actual connected client count (non-fatal)
       let clientCount = 0;
       try {
         const clients = await meraki.clients.listByNetwork(network.id, 300);
@@ -182,13 +307,19 @@ async function pollNetworks(): Promise<void> {
         clientCount = 0;
       }
 
+      const stats: AlertStats = { online, offline, alerting, dormant, total, clientCount };
+
       writeSnapshot({
         networkId: network.id,
         networkName: network.name,
         stats: { total, online, offline, alerting, dormant, clientCount, healthScore },
       });
 
-      // Use per-network override, else fall back to global threshold
+      // Write to InfluxDB on every poll (time series)
+      await writeInfluxDbHealthMetric(network.id, network.name, healthScore, stats);
+
+      if (!config.enabled) continue;
+
       const threshold = getNetworkThreshold(network.id);
 
       if (healthScore < threshold) {
@@ -200,10 +331,11 @@ async function pollNetworks(): Promise<void> {
             continue;
           }
           lastAlerted.set(network.id, new Date());
-          const stats = { online, offline, alerting, total };
           await sendEmailAlert(network.name, network.id, healthScore, threshold, stats);
           await sendSlackAlert(network.name, network.id, healthScore, threshold, stats);
           await sendTeamsAlert(network.name, network.id, healthScore, threshold, stats);
+          await sendHealthWebhook(network.name, network.id, healthScore, threshold, stats);
+          await sendServiceNowAlert(network.name, network.id, healthScore, threshold, stats);
         }
       }
     }

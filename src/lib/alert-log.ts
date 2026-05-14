@@ -12,7 +12,7 @@ export interface AlertLogEntry {
   networkName: string;
   healthScore: number;
   threshold: number;
-  channel: "email" | "slack" | "teams";
+  channel: "email" | "slack" | "teams" | "webhook" | "servicenow";
   success: boolean;
   error?: string;
 }

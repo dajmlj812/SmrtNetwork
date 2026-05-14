@@ -49,6 +49,8 @@ function DiagnoseModal({ device, networkId, onClose }: DiagnoseModalProps) {
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [creatingJira, setCreatingJira] = useState(false);
+  const [jiraResult, setJiraResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   async function runDiagnosis() {
     setLoading(true);
@@ -66,6 +68,35 @@ function DiagnoseModal({ device, networkId, onClose }: DiagnoseModalProps) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleCreateJira() {
+    setCreatingJira(true);
+    setJiraResult(null);
+    try {
+      const res = await fetch("/api/integrations/jira", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deviceName: device.name || device.serial,
+          deviceSerial: device.serial,
+          deviceModel: device.model,
+          networkName: networkId,
+          status: device.status ?? "unknown",
+          analysis: analysis ?? undefined,
+        }),
+      });
+      const data = await res.json() as { success?: boolean; issueKey?: string; issueUrl?: string; error?: string };
+      if (data.success) {
+        setJiraResult({ ok: true, message: data.issueKey ? `Created ${data.issueKey}` : "Issue created" });
+      } else {
+        setJiraResult({ ok: false, message: data.error ?? "Failed to create issue" });
+      }
+    } catch (err) {
+      setJiraResult({ ok: false, message: err instanceof Error ? err.message : "Unknown error" });
+    } finally {
+      setCreatingJira(false);
     }
   }
 
@@ -104,7 +135,27 @@ function DiagnoseModal({ device, networkId, onClose }: DiagnoseModalProps) {
           </div>
         )}
 
-        {analysis && <MarkdownOutput content={analysis} />}
+        {analysis && (
+          <>
+            <MarkdownOutput content={analysis} />
+            <div className="flex items-center gap-3 pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={handleCreateJira}
+                disabled={creatingJira}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 disabled:opacity-40 transition-colors"
+              >
+                {creatingJira && <Loader2 size={12} className="animate-spin" />}
+                {creatingJira ? "Creating…" : "Create Jira Issue"}
+              </button>
+              {jiraResult && (
+                <span className={cn("text-xs", jiraResult.ok ? "text-green-400" : "text-red-400")}>
+                  {jiraResult.message}
+                </span>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

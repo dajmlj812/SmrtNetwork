@@ -10,6 +10,7 @@ import {
   getWebhookConfig,
   getActiveOrgId,
   getLdapConfig,
+  getIntegrationConfigs,
   maskKey,
 } from "@/lib/config";
 import { appendAuditEntry } from "@/lib/audit-log";
@@ -24,6 +25,7 @@ export async function GET() {
   const webhooks     = getWebhookConfig();
   const config       = readConfig();
   const ldap         = getLdapConfig();
+  const integrations = getIntegrationConfigs();
 
   return NextResponse.json({
     merakiApiKeySet:      !!merakiKey,
@@ -59,6 +61,30 @@ export async function GET() {
     ldapUserFilter:    ldap.userFilter,
     ldapAdminGroup:    ldap.adminGroup ?? "",
     ldapReadonlyGroup: ldap.readonlyGroup ?? "",
+    // Integrations
+    serviceNowEnabled:         integrations.serviceNow.enabled,
+    serviceNowInstanceUrl:     integrations.serviceNow.instanceUrl,
+    serviceNowUsername:        integrations.serviceNow.username,
+    serviceNowPasswordSet:     integrations.serviceNow.passwordSet,
+    serviceNowAssignmentGroup: integrations.serviceNow.assignmentGroup,
+    serviceNowCategory:        integrations.serviceNow.category,
+    serviceNowCmdbCi:          integrations.serviceNow.cmdbCi,
+    jiraEnabled:      integrations.jira.enabled,
+    jiraUrl:          integrations.jira.url,
+    jiraEmail:        integrations.jira.email,
+    jiraApiTokenSet:  integrations.jira.apiTokenSet,
+    jiraProjectKey:   integrations.jira.projectKey,
+    jiraIssueType:    integrations.jira.issueType,
+    influxDbEnabled:   integrations.influxDb.enabled,
+    influxDbUrl:       integrations.influxDb.url,
+    influxDbMode:      integrations.influxDb.mode,
+    influxDbOrg:       integrations.influxDb.org,
+    influxDbBucket:    integrations.influxDb.bucket,
+    influxDbTokenSet:  integrations.influxDb.tokenSet,
+    influxDbDatabase:  integrations.influxDb.database,
+    influxDbUsername:  integrations.influxDb.username,
+    influxDbPasswordSet: integrations.influxDb.passwordSet,
+    healthWebhookUrls: integrations.healthWebhookUrls,
   });
 }
 
@@ -94,6 +120,30 @@ export async function POST(req: NextRequest) {
       ldapUserFilter: string;
       ldapAdminGroup: string;
       ldapReadonlyGroup: string;
+      // Integrations
+      serviceNowEnabled: boolean;
+      serviceNowInstanceUrl: string;
+      serviceNowUsername: string;
+      serviceNowPassword: string;
+      serviceNowAssignmentGroup: string;
+      serviceNowCategory: string;
+      serviceNowCmdbCi: string;
+      jiraEnabled: boolean;
+      jiraUrl: string;
+      jiraEmail: string;
+      jiraApiToken: string;
+      jiraProjectKey: string;
+      jiraIssueType: string;
+      influxDbEnabled: boolean;
+      influxDbUrl: string;
+      influxDbMode: "v1" | "v2";
+      influxDbOrg: string;
+      influxDbBucket: string;
+      influxDbToken: string;
+      influxDbDatabase: string;
+      influxDbUsername: string;
+      influxDbPassword: string;
+      healthWebhookUrls: string;
     }> = {};
 
     if (typeof body.merakiApiKey === "string" && body.merakiApiKey.trim())
@@ -150,6 +200,34 @@ export async function POST(req: NextRequest) {
       updates.ldapUserFilter = body.ldapUserFilter.trim();
     if (typeof body.ldapAdminGroup === "string") updates.ldapAdminGroup = body.ldapAdminGroup.trim();
     if (typeof body.ldapReadonlyGroup === "string") updates.ldapReadonlyGroup = body.ldapReadonlyGroup.trim();
+
+    // ServiceNow
+    if (body.serviceNowEnabled != null) updates.serviceNowEnabled = Boolean(body.serviceNowEnabled);
+    if (typeof body.serviceNowInstanceUrl === "string") updates.serviceNowInstanceUrl = body.serviceNowInstanceUrl.trim();
+    if (typeof body.serviceNowUsername === "string") updates.serviceNowUsername = body.serviceNowUsername.trim();
+    if (typeof body.serviceNowPassword === "string" && body.serviceNowPassword.trim()) updates.serviceNowPassword = body.serviceNowPassword.trim();
+    if (typeof body.serviceNowAssignmentGroup === "string") updates.serviceNowAssignmentGroup = body.serviceNowAssignmentGroup.trim();
+    if (typeof body.serviceNowCategory === "string") updates.serviceNowCategory = body.serviceNowCategory.trim();
+    if (typeof body.serviceNowCmdbCi === "string") updates.serviceNowCmdbCi = body.serviceNowCmdbCi.trim();
+    // Jira
+    if (body.jiraEnabled != null) updates.jiraEnabled = Boolean(body.jiraEnabled);
+    if (typeof body.jiraUrl === "string") updates.jiraUrl = body.jiraUrl.trim();
+    if (typeof body.jiraEmail === "string") updates.jiraEmail = body.jiraEmail.trim();
+    if (typeof body.jiraApiToken === "string" && body.jiraApiToken.trim()) updates.jiraApiToken = body.jiraApiToken.trim();
+    if (typeof body.jiraProjectKey === "string") updates.jiraProjectKey = body.jiraProjectKey.trim();
+    if (typeof body.jiraIssueType === "string" && body.jiraIssueType.trim()) updates.jiraIssueType = body.jiraIssueType.trim();
+    // InfluxDB
+    if (body.influxDbEnabled != null) updates.influxDbEnabled = Boolean(body.influxDbEnabled);
+    if (typeof body.influxDbUrl === "string") updates.influxDbUrl = body.influxDbUrl.trim();
+    if (body.influxDbMode === "v1" || body.influxDbMode === "v2") updates.influxDbMode = body.influxDbMode;
+    if (typeof body.influxDbOrg === "string") updates.influxDbOrg = body.influxDbOrg.trim();
+    if (typeof body.influxDbBucket === "string") updates.influxDbBucket = body.influxDbBucket.trim();
+    if (typeof body.influxDbToken === "string" && body.influxDbToken.trim()) updates.influxDbToken = body.influxDbToken.trim();
+    if (typeof body.influxDbDatabase === "string") updates.influxDbDatabase = body.influxDbDatabase.trim();
+    if (typeof body.influxDbUsername === "string") updates.influxDbUsername = body.influxDbUsername.trim();
+    if (typeof body.influxDbPassword === "string" && body.influxDbPassword.trim()) updates.influxDbPassword = body.influxDbPassword.trim();
+    // Generic health webhook
+    if (typeof body.healthWebhookUrls === "string") updates.healthWebhookUrls = body.healthWebhookUrls.trim();
 
     if (Object.keys(updates).length === 0)
       return NextResponse.json({ error: "No valid fields provided" }, { status: 400 });

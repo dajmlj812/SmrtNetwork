@@ -8,6 +8,9 @@ import { formatBytes, cn } from "@/lib/utils";
 import type { Client } from "@/lib/meraki/types";
 import { toCSV, downloadCSV } from "@/lib/csv";
 
+interface ClientTag { label: string; group?: string }
+type TagMap = Record<string, ClientTag>;
+
 const TIMESPANS = [
   { label: "Last hour", value: 3600 },
   { label: "Last 6 hours", value: 21600 },
@@ -60,6 +63,17 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("usage");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [groupFilter, setGroupFilter] = useState("");
+
+  const { data: tags } = useQuery<TagMap>({
+    queryKey: ["client-tags"],
+    queryFn: async () => {
+      const res = await fetch("/api/tags");
+      if (!res.ok) return {};
+      return res.json() as Promise<TagMap>;
+    },
+    staleTime: 30_000,
+  });
 
   const { data: clients, isLoading, isError, error } = useQuery<Client[]>({
     queryKey: ["clients", selectedNetwork?.id, timespan],
@@ -78,23 +92,30 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
   });
 
   function handleExportCSV() {
-    const rows = sorted.map((c) => ({
-      Name: c.description?.trim() || c.manufacturer || c.mac,
-      MAC: c.mac,
-      IP: c.ip ?? "",
-      Manufacturer: c.manufacturer ?? "",
-      OS: c.os ?? "",
-      SSID: c.ssid ?? "",
-      VLAN: c.vlan ?? "",
-      AP: c.recentDeviceName ?? "",
-      "Last Seen": c.lastSeen,
-      "Total Usage (bytes)": c.usage.sent + c.usage.recv,
-      "Download (bytes)": c.usage.recv,
-      "Upload (bytes)": c.usage.sent,
-    }));
+    const rows = sorted.map((c) => {
+      const tag = tags?.[c.mac.toLowerCase()];
+      return {
+        Name: c.description?.trim() || c.manufacturer || c.mac,
+        MAC: c.mac,
+        Label: tag?.label ?? "",
+        Group: tag?.group ?? "",
+        IP: c.ip ?? "",
+        Manufacturer: c.manufacturer ?? "",
+        OS: c.os ?? "",
+        SSID: c.ssid ?? "",
+        VLAN: c.vlan ?? "",
+        AP: c.recentDeviceName ?? "",
+        "Last Seen": c.lastSeen,
+        "Total Usage (bytes)": c.usage.sent + c.usage.recv,
+        "Download (bytes)": c.usage.recv,
+        "Upload (bytes)": c.usage.sent,
+      };
+    });
     const columns = [
       { key: "Name", header: "Name" },
       { key: "MAC", header: "MAC" },
+      { key: "Label", header: "Label" },
+      { key: "Group", header: "Group" },
       { key: "IP", header: "IP" },
       { key: "Manufacturer", header: "Manufacturer" },
       { key: "OS", header: "OS" },
@@ -116,21 +137,32 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
     else { setSortKey(key); setSortDir("desc"); }
   }
 
+  const allGroups = useMemo(() => {
+    if (!tags) return [];
+    return [...new Set(Object.values(tags).map((t) => t.group).filter(Boolean) as string[])].sort();
+  }, [tags]);
+
   const filtered = useMemo(() => {
     if (!clients) return [];
     const q = search.toLowerCase().trim();
-    return clients.filter((c) =>
-      !q ||
-      c.mac.toLowerCase().includes(q) ||
-      c.ip?.toLowerCase().includes(q) ||
-      c.description?.toLowerCase().includes(q) ||
-      c.manufacturer?.toLowerCase().includes(q) ||
-      c.os?.toLowerCase().includes(q) ||
-      c.ssid?.toLowerCase().includes(q) ||
-      c.vlan?.toLowerCase().includes(q) ||
-      c.recentDeviceName?.toLowerCase().includes(q)
-    );
-  }, [clients, search]);
+    return clients.filter((c) => {
+      const tag = tags?.[c.mac.toLowerCase()];
+      if (groupFilter && tag?.group !== groupFilter) return false;
+      return (
+        !q ||
+        c.mac.toLowerCase().includes(q) ||
+        c.ip?.toLowerCase().includes(q) ||
+        c.description?.toLowerCase().includes(q) ||
+        c.manufacturer?.toLowerCase().includes(q) ||
+        c.os?.toLowerCase().includes(q) ||
+        c.ssid?.toLowerCase().includes(q) ||
+        c.vlan?.toLowerCase().includes(q) ||
+        c.recentDeviceName?.toLowerCase().includes(q) ||
+        tag?.label.toLowerCase().includes(q) ||
+        tag?.group?.toLowerCase().includes(q)
+      );
+    });
+  }, [clients, search, tags, groupFilter]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -176,6 +208,18 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
           />
         </div>
         <div className="flex items-center gap-3">
+          {allGroups.length > 0 && (
+            <select
+              value={groupFilter}
+              onChange={(e) => setGroupFilter(e.target.value)}
+              className="text-sm rounded-lg px-3 py-1.5 bg-white/5 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">All groups</option>
+              {allGroups.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          )}
           <select
             value={timespan}
             onChange={(e) => setTimespan(Number(e.target.value))}
@@ -276,7 +320,17 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
                         <div className="font-medium text-white/90 truncate max-w-[160px]">
                           {c.description?.trim() || <span className="text-white/40 italic">unnamed</span>}
                         </div>
-                        <div className="font-mono text-xs text-white/30">{c.mac}</div>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                          <span className="font-mono text-xs text-white/30">{c.mac}</span>
+                          {tags?.[c.mac.toLowerCase()] && (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/20 shrink-0">
+                              {tags[c.mac.toLowerCase()].label}
+                              {tags[c.mac.toLowerCase()].group && (
+                                <span className="text-blue-400/60">· {tags[c.mac.toLowerCase()].group}</span>
+                              )}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-3 py-2.5 font-mono text-xs text-white/70 whitespace-nowrap">
                         {c.ip ?? <span className="text-white/20">—</span>}

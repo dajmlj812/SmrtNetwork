@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Download, Upload } from "lucide-react";
+import { X, Download, Upload, Tag } from "lucide-react";
 import { useNetwork } from "@/lib/context/NetworkContext";
 import { formatBytes, cn } from "@/lib/utils";
 import { MarkdownOutput } from "@/components/ui/MarkdownOutput";
 import type { Client } from "@/lib/meraki/types";
+
+interface ClientTag { label: string; group?: string }
 
 interface ClientDetailPanelProps {
   client: Client | null;
@@ -28,11 +30,69 @@ export function ClientDetailPanel({ client, onClose }: ClientDetailPanelProps) {
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
 
+  // Tag state
+  const [tag, setTag] = useState<ClientTag | null>(null);
+  const [tagLabel, setTagLabel] = useState("");
+  const [tagGroup, setTagGroup] = useState("");
+  const [savingTag, setSavingTag] = useState(false);
+  const [tagSaved, setTagSaved] = useState(false);
+  const [tagEditing, setTagEditing] = useState(false);
+
   useEffect(() => {
     setAnalysis(null);
     setAnalyzeError(null);
     setAnalyzing(false);
-  }, [client?.id]);
+    setTag(null);
+    setTagLabel("");
+    setTagGroup("");
+    setTagEditing(false);
+    setTagSaved(false);
+    if (!client) return;
+    fetch(`/api/tags?mac=${encodeURIComponent(client.mac)}`)
+      .then((r) => r.json())
+      .then((data: ClientTag | null) => {
+        if (data?.label) {
+          setTag(data);
+          setTagLabel(data.label);
+          setTagGroup(data.group ?? "");
+        }
+      })
+      .catch(() => {});
+  }, [client?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleSaveTag() {
+    if (!client || !tagLabel.trim()) return;
+    setSavingTag(true);
+    setTagSaved(false);
+    try {
+      await fetch("/api/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mac: client.mac, label: tagLabel.trim(), group: tagGroup.trim() || undefined }),
+      });
+      const saved: ClientTag = { label: tagLabel.trim(), group: tagGroup.trim() || undefined };
+      setTag(saved);
+      setTagSaved(true);
+      setTagEditing(false);
+      setTimeout(() => setTagSaved(false), 3000);
+    } finally {
+      setSavingTag(false);
+    }
+  }
+
+  async function handleRemoveTag() {
+    if (!client) return;
+    setSavingTag(true);
+    try {
+      await fetch(`/api/tags?mac=${encodeURIComponent(client.mac)}`, { method: "DELETE" });
+      setTag(null);
+      setTagLabel("");
+      setTagGroup("");
+      setTagEditing(false);
+    } finally {
+      setSavingTag(false);
+    }
+  }
 
   async function handleAnalyze() {
     if (!client || !selectedNetwork) return;
@@ -185,6 +245,89 @@ export function ClientDetailPanel({ client, onClose }: ClientDetailPanelProps) {
                     </div>
                   )}
                 </div>
+              </section>
+
+              {/* Tags */}
+              <section>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider flex items-center gap-1.5">
+                    <Tag size={11} /> Label
+                  </h3>
+                  {!tagEditing && (
+                    <button
+                      type="button"
+                      onClick={() => setTagEditing(true)}
+                      className="text-xs text-white/30 hover:text-white/60 transition-colors"
+                    >
+                      {tag ? "Edit" : "Add label"}
+                    </button>
+                  )}
+                </div>
+                {!tagEditing && tag && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 text-sm px-2.5 py-1 rounded-lg bg-blue-500/15 text-blue-300 border border-blue-500/20">
+                      {tag.label}
+                      {tag.group && <span className="text-blue-400/60 text-xs">· {tag.group}</span>}
+                    </span>
+                    {tagSaved && <span className="text-xs text-green-400">Saved</span>}
+                  </div>
+                )}
+                {!tagEditing && !tag && (
+                  <p className="text-xs text-white/30 italic">No label — click &ldquo;Add label&rdquo; to tag this client.</p>
+                )}
+                {tagEditing && (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs text-white/40 block mb-1">Label</label>
+                        <input
+                          type="text"
+                          value={tagLabel}
+                          onChange={(e) => setTagLabel(e.target.value)}
+                          placeholder="e.g. Printer, iPad, POS"
+                          className="w-full px-2.5 py-1.5 rounded-lg text-sm bg-white/5 border border-white/10 placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-white/40 block mb-1">Group (opt)</label>
+                        <input
+                          type="text"
+                          value={tagGroup}
+                          onChange={(e) => setTagGroup(e.target.value)}
+                          placeholder="e.g. Floor 2, Warehouse"
+                          className="w-full px-2.5 py-1.5 rounded-lg text-sm bg-white/5 border border-white/10 placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSaveTag}
+                        disabled={savingTag || !tagLabel.trim()}
+                        className="px-3 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-xs font-medium transition-colors"
+                      >
+                        {savingTag ? "Saving…" : "Save"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setTagEditing(false); if (tag) { setTagLabel(tag.label); setTagGroup(tag.group ?? ""); } }}
+                        className="px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 text-xs transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      {tag && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveTag}
+                          disabled={savingTag}
+                          className="ml-auto text-xs text-red-400/60 hover:text-red-400 transition-colors"
+                        >
+                          Remove label
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </section>
 
               {/* AI Analysis */}

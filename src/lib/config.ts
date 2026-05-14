@@ -34,6 +34,33 @@ export interface AppConfig {
   ldapUserFilter?: string;
   ldapAdminGroup?: string;
   ldapReadonlyGroup?: string;
+  // ServiceNow
+  serviceNowEnabled?: boolean;
+  serviceNowInstanceUrl?: string;
+  serviceNowUsername?: string;
+  serviceNowPassword?: string;
+  serviceNowAssignmentGroup?: string;
+  serviceNowCategory?: string;
+  serviceNowCmdbCi?: string;
+  // Jira
+  jiraEnabled?: boolean;
+  jiraUrl?: string;
+  jiraEmail?: string;
+  jiraApiToken?: string;
+  jiraProjectKey?: string;
+  jiraIssueType?: string;
+  // InfluxDB
+  influxDbEnabled?: boolean;
+  influxDbUrl?: string;
+  influxDbMode?: "v1" | "v2";
+  influxDbOrg?: string;
+  influxDbBucket?: string;
+  influxDbToken?: string;
+  influxDbDatabase?: string;
+  influxDbUsername?: string;
+  influxDbPassword?: string;
+  // Generic health webhook
+  healthWebhookUrls?: string;
 }
 
 export function readConfig(): AppConfig {
@@ -135,5 +162,42 @@ export function getWebhookConfig() {
   return {
     slack: splitUrls(c.slackWebhookUrl),
     teams: splitUrls(c.teamsWebhookUrl),
+    health: splitUrls(c.healthWebhookUrls),
+  };
+}
+
+export function getIntegrationConfigs() {
+  const c = readConfig();
+  return {
+    serviceNow: {
+      enabled: c.serviceNowEnabled ?? false,
+      instanceUrl: c.serviceNowInstanceUrl ?? "",
+      username: c.serviceNowUsername ?? "",
+      passwordSet: !!c.serviceNowPassword,
+      password: c.serviceNowPassword,
+      assignmentGroup: c.serviceNowAssignmentGroup ?? "",
+      category: c.serviceNowCategory ?? "",
+      cmdbCi: c.serviceNowCmdbCi ?? "",
+    },
+    jira: {
+      enabled: c.jiraEnabled ?? false,
+      url: c.jiraUrl ?? "",
+      email: c.jiraEmail ?? "",
+      apiTokenSet: !!c.jiraApiToken,
+      projectKey: c.jiraProjectKey ?? "",
+      issueType: c.jiraIssueType ?? "Bug",
+    },
+    influxDb: {
+      enabled: c.influxDbEnabled ?? false,
+      url: c.influxDbUrl ?? "",
+      mode: c.influxDbMode ?? "v2" as "v1" | "v2",
+      org: c.influxDbOrg ?? "",
+      bucket: c.influxDbBucket ?? "",
+      tokenSet: !!c.influxDbToken,
+      database: c.influxDbDatabase ?? "",
+      username: c.influxDbUsername ?? "",
+      passwordSet: !!c.influxDbPassword,
+    },
+    healthWebhookUrls: c.healthWebhookUrls ?? "",
   };
 }

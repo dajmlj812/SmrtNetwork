@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   CheckCircle, AlertCircle, Eye, EyeOff, Loader2, Mail, LogOut, Lock,
-  ShieldOff, Download, Trash2, Server,
+  ShieldOff, Download, Trash2, Server, Database, Link2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRole, useIsAdmin } from "@/lib/context/RoleContext";
@@ -42,6 +42,30 @@ interface SettingsStatus {
   ldapUserFilter: string;
   ldapAdminGroup: string;
   ldapReadonlyGroup: string;
+  // Integrations
+  serviceNowEnabled: boolean;
+  serviceNowInstanceUrl: string;
+  serviceNowUsername: string;
+  serviceNowPasswordSet: boolean;
+  serviceNowAssignmentGroup: string;
+  serviceNowCategory: string;
+  serviceNowCmdbCi: string;
+  jiraEnabled: boolean;
+  jiraUrl: string;
+  jiraEmail: string;
+  jiraApiTokenSet: boolean;
+  jiraProjectKey: string;
+  jiraIssueType: string;
+  influxDbEnabled: boolean;
+  influxDbUrl: string;
+  influxDbMode: "v1" | "v2";
+  influxDbOrg: string;
+  influxDbBucket: string;
+  influxDbTokenSet: boolean;
+  influxDbDatabase: string;
+  influxDbUsername: string;
+  influxDbPasswordSet: boolean;
+  healthWebhookUrls: string;
 }
 
 interface AuditEntry {
@@ -372,6 +396,54 @@ export default function SettingsPage() {
   const [ldapSaved, setLdapSaved] = useState(false);
   const [ldapError, setLdapError] = useState<string | null>(null);
 
+  // ServiceNow
+  const [serviceNowEnabled, setServiceNowEnabled] = useState(false);
+  const [serviceNowInstanceUrl, setServiceNowInstanceUrl] = useState("");
+  const [serviceNowUsername, setServiceNowUsername] = useState("");
+  const [serviceNowPassword, setServiceNowPassword] = useState("");
+  const [serviceNowAssignmentGroup, setServiceNowAssignmentGroup] = useState("");
+  const [serviceNowCategory, setServiceNowCategory] = useState("");
+  const [serviceNowCmdbCi, setServiceNowCmdbCi] = useState("");
+  const [savingServiceNow, setSavingServiceNow] = useState(false);
+  const [serviceNowSaved, setServiceNowSaved] = useState(false);
+  const [serviceNowError, setServiceNowError] = useState<string | null>(null);
+  const [testingServiceNow, setTestingServiceNow] = useState(false);
+  const [serviceNowTestResult, setServiceNowTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  // Jira
+  const [jiraEnabled, setJiraEnabled] = useState(false);
+  const [jiraUrl, setJiraUrl] = useState("");
+  const [jiraEmail, setJiraEmail] = useState("");
+  const [jiraApiToken, setJiraApiToken] = useState("");
+  const [jiraProjectKey, setJiraProjectKey] = useState("");
+  const [jiraIssueType, setJiraIssueType] = useState("Bug");
+  const [savingJira, setSavingJira] = useState(false);
+  const [jiraSaved, setJiraSaved] = useState(false);
+  const [jiraError, setJiraError] = useState<string | null>(null);
+  const [testingJira, setTestingJira] = useState(false);
+  const [jiraTestResult, setJiraTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  // InfluxDB
+  const [influxDbEnabled, setInfluxDbEnabled] = useState(false);
+  const [influxDbUrl, setInfluxDbUrl] = useState("");
+  const [influxDbMode, setInfluxDbMode] = useState<"v1" | "v2">("v2");
+  const [influxDbOrg, setInfluxDbOrg] = useState("");
+  const [influxDbBucket, setInfluxDbBucket] = useState("");
+  const [influxDbToken, setInfluxDbToken] = useState("");
+  const [influxDbDatabase, setInfluxDbDatabase] = useState("");
+  const [influxDbUsername, setInfluxDbUsername] = useState("");
+  const [influxDbPassword, setInfluxDbPassword] = useState("");
+  const [savingInfluxDb, setSavingInfluxDb] = useState(false);
+  const [influxDbSaved, setInfluxDbSaved] = useState(false);
+  const [influxDbError, setInfluxDbError] = useState<string | null>(null);
+  const [testingInfluxDb, setTestingInfluxDb] = useState(false);
+  const [influxDbTestResult, setInfluxDbTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  // Health webhook
+  const [healthWebhookUrls, setHealthWebhookUrls] = useState("");
+  const [savingHealthWebhook, setSavingHealthWebhook] = useState(false);
+  const [healthWebhookSaved, setHealthWebhookSaved] = useState(false);
+
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
@@ -394,6 +466,26 @@ export default function SettingsPage() {
         setLdapUserFilter(data.ldapUserFilter || "(sAMAccountName={{username}})");
         setLdapAdminGroup(data.ldapAdminGroup ?? "");
         setLdapReadonlyGroup(data.ldapReadonlyGroup ?? "");
+        // Integrations
+        setServiceNowEnabled(data.serviceNowEnabled ?? false);
+        setServiceNowInstanceUrl(data.serviceNowInstanceUrl ?? "");
+        setServiceNowUsername(data.serviceNowUsername ?? "");
+        setServiceNowAssignmentGroup(data.serviceNowAssignmentGroup ?? "");
+        setServiceNowCategory(data.serviceNowCategory ?? "");
+        setServiceNowCmdbCi(data.serviceNowCmdbCi ?? "");
+        setJiraEnabled(data.jiraEnabled ?? false);
+        setJiraUrl(data.jiraUrl ?? "");
+        setJiraEmail(data.jiraEmail ?? "");
+        setJiraProjectKey(data.jiraProjectKey ?? "");
+        setJiraIssueType(data.jiraIssueType || "Bug");
+        setInfluxDbEnabled(data.influxDbEnabled ?? false);
+        setInfluxDbUrl(data.influxDbUrl ?? "");
+        setInfluxDbMode(data.influxDbMode ?? "v2");
+        setInfluxDbOrg(data.influxDbOrg ?? "");
+        setInfluxDbBucket(data.influxDbBucket ?? "");
+        setInfluxDbDatabase(data.influxDbDatabase ?? "");
+        setInfluxDbUsername(data.influxDbUsername ?? "");
+        setHealthWebhookUrls(data.healthWebhookUrls ?? "");
       })
       .finally(() => setLoading(false));
   }, []);
@@ -613,6 +705,149 @@ export default function SettingsPage() {
       setLdapError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setSavingLdap(false);
+    }
+  }
+
+  async function handleSaveServiceNow() {
+    setSavingServiceNow(true);
+    setServiceNowSaved(false);
+    setServiceNowError(null);
+    try {
+      const body: Record<string, unknown> = {
+        serviceNowEnabled,
+        serviceNowInstanceUrl: serviceNowInstanceUrl.trim(),
+        serviceNowUsername: serviceNowUsername.trim(),
+        serviceNowAssignmentGroup: serviceNowAssignmentGroup.trim(),
+        serviceNowCategory: serviceNowCategory.trim(),
+        serviceNowCmdbCi: serviceNowCmdbCi.trim(),
+      };
+      if (serviceNowPassword.trim()) body.serviceNowPassword = serviceNowPassword.trim();
+      await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      setServiceNowPassword("");
+      setServiceNowSaved(true);
+      setTimeout(() => setServiceNowSaved(false), 3000);
+      const fresh = await fetch("/api/settings").then((r) => r.json()) as SettingsStatus;
+      setStatus(fresh);
+    } catch (err) {
+      setServiceNowError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setSavingServiceNow(false);
+    }
+  }
+
+  async function handleTestServiceNow() {
+    setTestingServiceNow(true);
+    setServiceNowTestResult(null);
+    try {
+      const res = await fetch("/api/integrations/servicenow/test", { method: "POST" });
+      const data = await res.json() as { success?: boolean; error?: string };
+      setServiceNowTestResult({ ok: !!data.success, message: data.success ? "Connection successful" : (data.error ?? "Test failed") });
+    } catch (err) {
+      setServiceNowTestResult({ ok: false, message: err instanceof Error ? err.message : "Unknown error" });
+    } finally {
+      setTestingServiceNow(false);
+    }
+  }
+
+  async function handleSaveJira() {
+    setSavingJira(true);
+    setJiraSaved(false);
+    setJiraError(null);
+    try {
+      const body: Record<string, unknown> = {
+        jiraEnabled,
+        jiraUrl: jiraUrl.trim(),
+        jiraEmail: jiraEmail.trim(),
+        jiraProjectKey: jiraProjectKey.trim(),
+        jiraIssueType: jiraIssueType.trim() || "Bug",
+      };
+      if (jiraApiToken.trim()) body.jiraApiToken = jiraApiToken.trim();
+      await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      setJiraApiToken("");
+      setJiraSaved(true);
+      setTimeout(() => setJiraSaved(false), 3000);
+      const fresh = await fetch("/api/settings").then((r) => r.json()) as SettingsStatus;
+      setStatus(fresh);
+    } catch (err) {
+      setJiraError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setSavingJira(false);
+    }
+  }
+
+  async function handleTestJira() {
+    setTestingJira(true);
+    setJiraTestResult(null);
+    try {
+      const res = await fetch("/api/integrations/jira", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "test" }),
+      });
+      const data = await res.json() as { success?: boolean; displayName?: string; error?: string };
+      setJiraTestResult({ ok: !!data.success, message: data.success ? `Connected as ${data.displayName ?? "user"}` : (data.error ?? "Test failed") });
+    } catch (err) {
+      setJiraTestResult({ ok: false, message: err instanceof Error ? err.message : "Unknown error" });
+    } finally {
+      setTestingJira(false);
+    }
+  }
+
+  async function handleSaveInfluxDb() {
+    setSavingInfluxDb(true);
+    setInfluxDbSaved(false);
+    setInfluxDbError(null);
+    try {
+      const body: Record<string, unknown> = {
+        influxDbEnabled,
+        influxDbUrl: influxDbUrl.trim(),
+        influxDbMode,
+        influxDbOrg: influxDbOrg.trim(),
+        influxDbBucket: influxDbBucket.trim(),
+        influxDbDatabase: influxDbDatabase.trim(),
+        influxDbUsername: influxDbUsername.trim(),
+      };
+      if (influxDbToken.trim()) body.influxDbToken = influxDbToken.trim();
+      if (influxDbPassword.trim()) body.influxDbPassword = influxDbPassword.trim();
+      await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      setInfluxDbToken("");
+      setInfluxDbPassword("");
+      setInfluxDbSaved(true);
+      setTimeout(() => setInfluxDbSaved(false), 3000);
+      const fresh = await fetch("/api/settings").then((r) => r.json()) as SettingsStatus;
+      setStatus(fresh);
+    } catch (err) {
+      setInfluxDbError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setSavingInfluxDb(false);
+    }
+  }
+
+  async function handleTestInfluxDb() {
+    setTestingInfluxDb(true);
+    setInfluxDbTestResult(null);
+    try {
+      const res = await fetch("/api/integrations/influxdb/test", { method: "POST" });
+      const data = await res.json() as { success?: boolean; error?: string };
+      setInfluxDbTestResult({ ok: !!data.success, message: data.success ? "Connection successful" : (data.error ?? "Test failed") });
+    } catch (err) {
+      setInfluxDbTestResult({ ok: false, message: err instanceof Error ? err.message : "Unknown error" });
+    } finally {
+      setTestingInfluxDb(false);
+    }
+  }
+
+  async function handleSaveHealthWebhook() {
+    setSavingHealthWebhook(true);
+    setHealthWebhookSaved(false);
+    try {
+      await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ healthWebhookUrls: healthWebhookUrls.trim() }) });
+      setHealthWebhookSaved(true);
+      setTimeout(() => setHealthWebhookSaved(false), 3000);
+      const fresh = await fetch("/api/settings").then((r) => r.json()) as SettingsStatus;
+      setStatus(fresh);
+    } finally {
+      setSavingHealthWebhook(false);
     }
   }
 
@@ -1123,6 +1358,235 @@ export default function SettingsPage() {
                   <AlertCircle size={13} /> {ldapError}
                 </span>
               )}
+            </div>
+          </div>
+
+          {/* Integrations — ServiceNow */}
+          <div className="rounded-xl border border-white/10 p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider flex items-center gap-2">
+                <Server size={14} /> ServiceNow
+              </h2>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={serviceNowEnabled} onChange={(e) => setServiceNowEnabled(e.target.checked)}
+                  disabled={isReadonly} className="w-4 h-4 rounded accent-[#1e9c4a] cursor-pointer" />
+                <span className="text-xs text-white/60">Enable</span>
+              </label>
+            </div>
+            <p className="text-xs text-white/30">Automatically creates a ServiceNow incident when a network health alert fires.</p>
+            <div className="grid grid-cols-2 gap-4">
+              <TextField label="Instance URL" fieldKey="serviceNowInstanceUrl"
+                placeholder="https://company.service-now.com"
+                value={serviceNowInstanceUrl} onChange={setServiceNowInstanceUrl} />
+              <TextField label="Username" fieldKey="serviceNowUsername"
+                placeholder="admin"
+                value={serviceNowUsername} onChange={setServiceNowUsername} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-white/80 block">
+                Password {status?.serviceNowPasswordSet && <span className="ml-2 text-xs text-green-400 font-normal">set</span>}
+              </label>
+              <input type="password" value={serviceNowPassword} onChange={(e) => setServiceNowPassword(e.target.value)}
+                placeholder={status?.serviceNowPasswordSet ? "Enter new value to replace…" : "ServiceNow password…"}
+                className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
+                  "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <TextField label="Assignment Group (opt)" fieldKey="serviceNowAssignmentGroup"
+                placeholder="Network Operations" value={serviceNowAssignmentGroup} onChange={setServiceNowAssignmentGroup} />
+              <TextField label="Category (opt)" fieldKey="serviceNowCategory"
+                placeholder="Network" value={serviceNowCategory} onChange={setServiceNowCategory} />
+              <TextField label="CMDB CI (opt)" fieldKey="serviceNowCmdbCi"
+                placeholder="CI sys_id" value={serviceNowCmdbCi} onChange={setServiceNowCmdbCi} />
+            </div>
+            <div className="flex items-center gap-3 pt-1">
+              <button type="button" onClick={handleSaveServiceNow} disabled={savingServiceNow || isReadonly}
+                className="px-4 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
+                {savingServiceNow && <Loader2 size={13} className="animate-spin" />}
+                Save ServiceNow
+              </button>
+              <button type="button" onClick={handleTestServiceNow}
+                disabled={testingServiceNow || !status?.serviceNowPasswordSet || !serviceNowInstanceUrl}
+                title={!status?.serviceNowPasswordSet ? "Save credentials first" : undefined}
+                className="px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 disabled:opacity-40 text-sm transition-colors flex items-center gap-2">
+                {testingServiceNow && <Loader2 size={13} className="animate-spin" />}
+                Test Connection
+              </button>
+              {serviceNowSaved && <span className="flex items-center gap-1.5 text-sm text-green-400"><CheckCircle size={13} /> Saved</span>}
+              {serviceNowError && <span className="flex items-center gap-1.5 text-sm text-red-400"><AlertCircle size={13} /> {serviceNowError}</span>}
+              {serviceNowTestResult && (
+                <span className={cn("flex items-center gap-1.5 text-sm", serviceNowTestResult.ok ? "text-green-400" : "text-red-400")}>
+                  {serviceNowTestResult.ok ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+                  {serviceNowTestResult.message}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Integrations — Jira */}
+          <div className="rounded-xl border border-white/10 p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider flex items-center gap-2">
+                <Link2 size={14} /> Jira
+              </h2>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={jiraEnabled} onChange={(e) => setJiraEnabled(e.target.checked)}
+                  disabled={isReadonly} className="w-4 h-4 rounded accent-[#1e9c4a] cursor-pointer" />
+                <span className="text-xs text-white/60">Enable</span>
+              </label>
+            </div>
+            <p className="text-xs text-white/30">Create Jira issues from device AI diagnosis results.</p>
+            <div className="grid grid-cols-2 gap-4">
+              <TextField label="Jira URL" fieldKey="jiraUrl"
+                placeholder="https://company.atlassian.net"
+                value={jiraUrl} onChange={setJiraUrl} />
+              <TextField label="Email" fieldKey="jiraEmail"
+                placeholder="user@company.com"
+                value={jiraEmail} onChange={setJiraEmail} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-white/80 block">
+                API Token {status?.jiraApiTokenSet && <span className="ml-2 text-xs text-green-400 font-normal">set</span>}
+              </label>
+              <input type="password" value={jiraApiToken} onChange={(e) => setJiraApiToken(e.target.value)}
+                placeholder={status?.jiraApiTokenSet ? "Enter new token to replace…" : "Jira API token…"}
+                className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
+                  "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <TextField label="Project Key" fieldKey="jiraProjectKey"
+                placeholder="NET" value={jiraProjectKey} onChange={setJiraProjectKey} />
+              <TextField label="Issue Type" fieldKey="jiraIssueType"
+                placeholder="Bug" value={jiraIssueType} onChange={setJiraIssueType} />
+            </div>
+            <div className="flex items-center gap-3 pt-1">
+              <button type="button" onClick={handleSaveJira} disabled={savingJira || isReadonly}
+                className="px-4 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
+                {savingJira && <Loader2 size={13} className="animate-spin" />}
+                Save Jira
+              </button>
+              <button type="button" onClick={handleTestJira}
+                disabled={testingJira || !status?.jiraApiTokenSet || !jiraUrl}
+                title={!status?.jiraApiTokenSet ? "Save API token first" : undefined}
+                className="px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 disabled:opacity-40 text-sm transition-colors flex items-center gap-2">
+                {testingJira && <Loader2 size={13} className="animate-spin" />}
+                Test Connection
+              </button>
+              {jiraSaved && <span className="flex items-center gap-1.5 text-sm text-green-400"><CheckCircle size={13} /> Saved</span>}
+              {jiraError && <span className="flex items-center gap-1.5 text-sm text-red-400"><AlertCircle size={13} /> {jiraError}</span>}
+              {jiraTestResult && (
+                <span className={cn("flex items-center gap-1.5 text-sm", jiraTestResult.ok ? "text-green-400" : "text-red-400")}>
+                  {jiraTestResult.ok ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+                  {jiraTestResult.message}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Integrations — InfluxDB */}
+          <div className="rounded-xl border border-white/10 p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider flex items-center gap-2">
+                <Database size={14} /> InfluxDB
+              </h2>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={influxDbEnabled} onChange={(e) => setInfluxDbEnabled(e.target.checked)}
+                  disabled={isReadonly} className="w-4 h-4 rounded accent-[#1e9c4a] cursor-pointer" />
+                <span className="text-xs text-white/60">Enable</span>
+              </label>
+            </div>
+            <p className="text-xs text-white/30">Writes network health score and device counts to InfluxDB on every poll (every 5 min). Visualize in Grafana.</p>
+            <div className="grid grid-cols-2 gap-4">
+              <TextField label="URL" fieldKey="influxDbUrl"
+                placeholder="http://localhost:8086" value={influxDbUrl} onChange={setInfluxDbUrl} />
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-white/80 block">API Version</label>
+                <select value={influxDbMode} onChange={(e) => setInfluxDbMode(e.target.value as "v1" | "v2")}
+                  disabled={isReadonly}
+                  className={cn("w-full px-3 py-2 rounded-lg text-sm", "bg-white/5 border border-white/10",
+                    "focus:outline-none focus:ring-1 focus:ring-blue-500")}>
+                  <option value="v2">InfluxDB v2 (token auth)</option>
+                  <option value="v1">InfluxDB v1 (user/pass)</option>
+                </select>
+              </div>
+            </div>
+            {influxDbMode === "v2" ? (
+              <div className="grid grid-cols-2 gap-4">
+                <TextField label="Organization" fieldKey="influxDbOrg"
+                  placeholder="my-org" value={influxDbOrg} onChange={setInfluxDbOrg} />
+                <TextField label="Bucket" fieldKey="influxDbBucket"
+                  placeholder="network-health" value={influxDbBucket} onChange={setInfluxDbBucket} />
+                <div className="col-span-2 space-y-1.5">
+                  <label className="text-sm font-medium text-white/80 block">
+                    API Token {status?.influxDbTokenSet && <span className="ml-2 text-xs text-green-400 font-normal">set</span>}
+                  </label>
+                  <input type="password" value={influxDbToken} onChange={(e) => setInfluxDbToken(e.target.value)}
+                    placeholder={status?.influxDbTokenSet ? "Enter new token to replace…" : "InfluxDB v2 token…"}
+                    className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
+                      "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <TextField label="Database" fieldKey="influxDbDatabase"
+                  placeholder="network_health" value={influxDbDatabase} onChange={setInfluxDbDatabase} />
+                <TextField label="Username (opt)" fieldKey="influxDbUsername"
+                  placeholder="admin" value={influxDbUsername} onChange={setInfluxDbUsername} />
+                <div className="col-span-2 space-y-1.5">
+                  <label className="text-sm font-medium text-white/80 block">
+                    Password (opt) {status?.influxDbPasswordSet && <span className="ml-2 text-xs text-green-400 font-normal">set</span>}
+                  </label>
+                  <input type="password" value={influxDbPassword} onChange={(e) => setInfluxDbPassword(e.target.value)}
+                    placeholder={status?.influxDbPasswordSet ? "Enter new value to replace…" : "InfluxDB password (optional)…"}
+                    className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
+                      "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                </div>
+              </div>
+            )}
+            <div className="flex items-center gap-3 pt-1">
+              <button type="button" onClick={handleSaveInfluxDb} disabled={savingInfluxDb || isReadonly}
+                className="px-4 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
+                {savingInfluxDb && <Loader2 size={13} className="animate-spin" />}
+                Save InfluxDB
+              </button>
+              <button type="button" onClick={handleTestInfluxDb}
+                disabled={testingInfluxDb || !influxDbUrl}
+                className="px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 disabled:opacity-40 text-sm transition-colors flex items-center gap-2">
+                {testingInfluxDb && <Loader2 size={13} className="animate-spin" />}
+                Test Connection
+              </button>
+              {influxDbSaved && <span className="flex items-center gap-1.5 text-sm text-green-400"><CheckCircle size={13} /> Saved</span>}
+              {influxDbError && <span className="flex items-center gap-1.5 text-sm text-red-400"><AlertCircle size={13} /> {influxDbError}</span>}
+              {influxDbTestResult && (
+                <span className={cn("flex items-center gap-1.5 text-sm", influxDbTestResult.ok ? "text-green-400" : "text-red-400")}>
+                  {influxDbTestResult.ok ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+                  {influxDbTestResult.message}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Integrations — Generic Health Webhook */}
+          <div className="rounded-xl border border-white/10 p-5 space-y-4">
+            <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider flex items-center gap-2">
+              <Link2 size={14} /> Health Event Webhook
+            </h2>
+            <p className="text-xs text-white/30">
+              POSTs a JSON payload to these URLs whenever a health alert fires. Separate multiple URLs with commas.
+            </p>
+            <div className="flex gap-2">
+              <input type="text" value={healthWebhookUrls} onChange={(e) => setHealthWebhookUrls(e.target.value)}
+                placeholder="https://your-server/webhook, https://another-server/hook"
+                className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
+                  "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+            </div>
+            <div className="flex items-center gap-3 pt-1">
+              <button type="button" onClick={handleSaveHealthWebhook} disabled={savingHealthWebhook || isReadonly}
+                className="px-4 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
+                {savingHealthWebhook && <Loader2 size={13} className="animate-spin" />}
+                Save Webhook URLs
+              </button>
+              {healthWebhookSaved && <span className="flex items-center gap-1.5 text-sm text-green-400"><CheckCircle size={13} /> Saved</span>}
             </div>
           </div>
 

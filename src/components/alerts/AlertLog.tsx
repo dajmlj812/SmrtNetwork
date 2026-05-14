@@ -10,12 +10,16 @@ const CHANNEL_LABELS: Record<AlertLogEntry["channel"], string> = {
   email: "Email",
   slack: "Slack",
   teams: "Teams",
+  webhook: "Webhook",
+  servicenow: "ServiceNow",
 };
 
 const CHANNEL_COLORS: Record<AlertLogEntry["channel"], string> = {
   email: "bg-blue-500/20 text-blue-300 border-blue-500/30",
   slack: "bg-purple-500/20 text-purple-300 border-purple-500/30",
   teams: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+  webhook: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+  servicenow: "bg-green-500/20 text-green-300 border-green-500/30",
 };
 
 function HealthBadge({ score }: { score: number }) {
