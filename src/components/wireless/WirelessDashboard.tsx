@@ -48,15 +48,15 @@ function ConnectionPipeline({ stats }: { stats: WirelessConnectionStats }) {
     { label: "Success", key: "success" },
   ];
 
-  const max = stats.assoc || 1;
+  const max = (stats.assoc ?? 0) || 1;
 
   return (
     <div className="rounded-xl border border-white/10 p-4 space-y-3">
       <h3 className="text-sm font-semibold text-white/70">Connection Pipeline (last 1h)</h3>
       <div className="flex items-end gap-2">
         {steps.map((step, i) => {
-          const val = stats[step.key];
-          const prev = i === 0 ? max : stats[steps[i - 1].key];
+          const val = stats[step.key] ?? 0;
+          const prev = i === 0 ? max : (stats[steps[i - 1].key] ?? 0);
           const pct = Math.round((val / max) * 100);
           const dropRatio = prev > 0 ? val / prev : 1;
           const barColor = i === 0
