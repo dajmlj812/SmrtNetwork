@@ -12,8 +12,12 @@ import { createHash } from "crypto";
 import { readConfig } from "@/lib/config";
 
 export const metadata: Metadata = {
-  title: "SmrtNetwork",
-  description: "Meraki network intelligence powered by Claude AI",
+  title: "SmrtNetwork | BuildITSmrt",
+  description: "Cisco Meraki network intelligence powered by Claude AI — BuildITSmrt, LLC.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/favicon.png",
+  },
 };
 
 export default async function RootLayout({

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { Loader2, Lock } from "lucide-react";
+import Image from "next/image";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
@@ -34,20 +35,28 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0d0d1a] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#0d1020] px-4">
       <div className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-2">
+        {/* Brand header */}
+        <div className="text-center space-y-3">
           <div className="flex justify-center">
-            <div className="w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center">
-              <Lock size={22} className="text-blue-400" />
-            </div>
+            <Image
+              src="/logo-mark.png"
+              alt="BuildITSmrt logo"
+              width={72}
+              height={72}
+              className="rounded-xl"
+            />
           </div>
-          <h1 className="text-2xl font-bold text-white">SmrtNetwork</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-white">SmrtNetwork</h1>
+            <p className="text-xs text-white/30 mt-0.5">BuildITSmrt, LLC.</p>
+          </div>
           <p className="text-sm text-white/40">Enter password to continue</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="rounded-xl border border-white/10 p-5 space-y-4">
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
             <div className="space-y-1.5">
               <label htmlFor="password" className="text-sm font-medium text-white/70 block">
                 Password
@@ -62,7 +71,7 @@ export default function LoginPage() {
                 className={cn(
                   "w-full px-3 py-2 rounded-lg text-sm",
                   "bg-white/5 border border-white/10",
-                  "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500",
+                  "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-[#1e9c4a]",
                   "text-white"
                 )}
               />
@@ -75,7 +84,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || !password}
-              className="w-full px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
+              className="w-full px-4 py-2 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
               {loading ? "Signing in…" : "Sign In"}

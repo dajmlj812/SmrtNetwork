@@ -1,19 +1,32 @@
 @import "tailwindcss";
 
+/* BuildITSmrt brand palette */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --card: #f9f9f9;
-  --border: rgba(0,0,0,0.1);
-  --muted: rgba(0,0,0,0.4);
+  --brand-navy:        #232b4f;
+  --brand-green:       #1e9c4a;
+  --brand-green-light: #30ba67;
+  --brand-gold:        #f5d991;
+  --brand-teal:        #1c3a45;
+
+  /* Light theme */
+  --background: #f4f6fb;
+  --foreground: #232b4f;
+  --card:        #ffffff;
+  --border:      rgba(35,43,79,0.12);
+  --muted:       rgba(35,43,79,0.5);
+  --accent:      #1e9c4a;
+  --accent-fg:   #ffffff;
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --card: #111111;
-  --border: rgba(255,255,255,0.1);
-  --muted: rgba(255,255,255,0.4);
+  /* Dark theme — navy-tinted */
+  --background: #0d1020;
+  --foreground: #e8eaf2;
+  --card:        #131728;
+  --border:      rgba(255,255,255,0.08);
+  --muted:       rgba(255,255,255,0.4);
+  --accent:      #1e9c4a;
+  --accent-fg:   #ffffff;
 }
 
 body {
