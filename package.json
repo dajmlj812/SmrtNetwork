@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "build:exe": "next build && node scripts/build-exe.mjs"
+  },
+  "devDependencies": {
+    "caxa": "^3.0.0"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",

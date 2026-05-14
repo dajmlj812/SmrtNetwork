@@ -1,7 +1,8 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 
-const CONFIG_PATH = join(process.cwd(), "smrt-config.json");
+const BASE_DIR = process.env.SMRT_DATA_DIR ?? process.cwd();
+const CONFIG_PATH = join(BASE_DIR, "smrt-config.json");
 
 export interface AppConfig {
   merakiApiKey?: string;

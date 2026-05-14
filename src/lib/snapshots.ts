@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
 
-const DATA_DIR = join(process.cwd(), "data");
+const DATA_DIR = join(process.env.SMRT_DATA_DIR ?? process.cwd(), "data");
 const SNAPSHOTS_FILE = join(DATA_DIR, "snapshots.json");
 
 export interface NetworkSnapshot {
