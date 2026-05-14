@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { FileDown, Loader2, CheckCircle, AlertCircle, Mail, Printer } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { FileDown, Loader2, CheckCircle, AlertCircle, Mail, Printer, History, ExternalLink, ChevronDown } from "lucide-react";
 import { useNetwork } from "@/lib/context/NetworkContext";
 import { cn } from "@/lib/utils";
 
@@ -9,13 +9,24 @@ interface SettingsStatus {
   smtpConfigured: boolean;
 }
 
+interface ReportHistoryMeta {
+  id: string;
+  generatedAt: string;
+  title: string;
+  scope: "org" | string;
+}
+
 export function ReportButton() {
-  const { orgId } = useNetwork();
-  const [loading, setLoading] = useState(false);
-  const [loadingPdf, setLoadingPdf] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [emailSent, setEmailSent] = useState(false);
+  const { orgId, selectedNetwork } = useNetwork();
+  const [loading, setLoading]         = useState(false);
+  const [loadingPdf, setLoadingPdf]   = useState(false);
+  const [loadingNet, setLoadingNet]   = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+  const [emailSent, setEmailSent]     = useState(false);
   const [smtpConfigured, setSmtpConfigured] = useState(false);
+  const [history, setHistory]         = useState<ReportHistoryMeta[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const historyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -24,11 +35,22 @@ export function ReportButton() {
       .catch(() => {});
   }, []);
 
-  async function fetchReportHtml(): Promise<string> {
+  // Close history dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (historyRef.current && !historyRef.current.contains(e.target as Node)) {
+        setShowHistory(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  async function fetchReportHtml(body: Record<string, unknown>): Promise<string> {
     const res = await fetch("/api/report", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orgId, sendEmail: false }),
+      body: JSON.stringify(body),
     });
     const data = await res.json() as { html?: string; error?: string };
     if (!res.ok || !data.html) throw new Error(data.error ?? "Failed to generate report");
@@ -46,19 +68,10 @@ export function ReportButton() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orgId, sendEmail: smtpConfigured }),
       });
-
       const data = await res.json() as { html?: string; emailSent?: boolean; error?: string };
       if (!res.ok || !data.html) throw new Error(data.error ?? "Failed to generate report");
 
-      const blob = new Blob([data.html], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `smrtnetwork-report-${new Date().toISOString().slice(0, 10)}.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadHtml(data.html, `smrtnetwork-org-report-${new Date().toISOString().slice(0, 10)}.html`);
 
       if (data.emailSent) {
         setEmailSent(true);
@@ -74,15 +87,9 @@ export function ReportButton() {
   async function handlePdf() {
     setLoadingPdf(true);
     setError(null);
-
     try {
-      const html = await fetchReportHtml();
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) throw new Error("Pop-up blocked — allow pop-ups and try again");
-      printWindow.document.write(html);
-      printWindow.document.close();
-      // Give the window a moment to render before triggering print
-      setTimeout(() => printWindow.print(), 800);
+      const html = await fetchReportHtml({ orgId, sendEmail: false });
+      openPrintWindow(html);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -90,64 +97,166 @@ export function ReportButton() {
     }
   }
 
-  const busy = loading || loadingPdf;
+  async function handleNetworkReport() {
+    if (!selectedNetwork) return;
+    setLoadingNet(true);
+    setError(null);
+    try {
+      const html = await fetchReportHtml({
+        networkId: selectedNetwork.id,
+        networkName: selectedNetwork.name,
+        sendEmail: false,
+      });
+      downloadHtml(html, `smrtnetwork-${selectedNetwork.name.replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.html`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setLoadingNet(false);
+    }
+  }
+
+  async function loadHistory() {
+    try {
+      const res = await fetch("/api/report/history");
+      const data = await res.json() as ReportHistoryMeta[];
+      setHistory(data);
+    } catch {
+      setHistory([]);
+    }
+    setShowHistory((s) => !s);
+  }
+
+  const busy = loading || loadingPdf || loadingNet;
 
   return (
-    <div className="flex items-center gap-3 flex-wrap">
+    <div className="flex items-center gap-2 flex-wrap">
+      {/* Org-wide HTML */}
       <button
         onClick={handleGenerate}
         disabled={busy}
         className={cn(
-          "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
           "bg-white/10 hover:bg-white/15 disabled:opacity-50"
         )}
       >
-        {loading
-          ? <Loader2 size={14} className="animate-spin" />
-          : <FileDown size={14} />}
-        {loading ? "Generating…" : "Download HTML"}
+        {loading ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
+        {loading ? "Generating…" : "Org Report"}
       </button>
 
+      {/* Org-wide PDF */}
       <button
         onClick={handlePdf}
         disabled={busy}
         className={cn(
-          "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-          "bg-[#1e9c4a]/10 hover:bg-[#1e9c4a]/20 text-[#30ba67] border border-[#1e9c4a]/30 disabled:opacity-50"
+          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+          "bg-white/8 hover:bg-white/12 disabled:opacity-50 text-white/70"
         )}
       >
-        {loadingPdf
-          ? <Loader2 size={14} className="animate-spin" />
-          : <Printer size={14} />}
-        {loadingPdf ? "Opening…" : "Download PDF"}
+        {loadingPdf ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />}
+        {loadingPdf ? "Opening…" : "PDF"}
       </button>
 
-      {!smtpConfigured && !busy && (
-        <span className="text-xs text-white/30 hidden md:block">
-          Configure SMTP in Settings to also email
-        </span>
+      {/* Per-network report — shown when a network is selected */}
+      {selectedNetwork && (
+        <button
+          onClick={handleNetworkReport}
+          disabled={busy}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+            "bg-[#1e9c4a]/10 hover:bg-[#1e9c4a]/20 text-[#30ba67] border border-[#1e9c4a]/30 disabled:opacity-50"
+          )}
+        >
+          {loadingNet ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
+          {loadingNet ? "Generating…" : "Network Report"}
+        </button>
       )}
 
+      {/* Report history dropdown */}
+      <div ref={historyRef} className="relative">
+        <button
+          onClick={loadHistory}
+          disabled={busy}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors",
+            "text-white/40 hover:text-white/70 hover:bg-white/5 disabled:opacity-50"
+          )}
+          title="Report history"
+        >
+          <History size={14} />
+          <ChevronDown size={12} className={cn("transition-transform", showHistory && "rotate-180")} />
+        </button>
+
+        {showHistory && (
+          <div className="absolute right-0 top-full mt-1 z-50 w-72 rounded-xl border border-white/10 bg-[#131728] shadow-xl p-2 space-y-0.5">
+            <p className="text-[10px] text-white/30 uppercase tracking-wider px-2 py-1">
+              Report History (last 15)
+            </p>
+            {history.length === 0 && (
+              <p className="text-xs text-white/40 px-2 py-2">No reports generated yet.</p>
+            )}
+            {history.map((r) => (
+              <a
+                key={r.id}
+                href={`/api/report/history?id=${r.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between gap-2 px-2 py-2 rounded-lg hover:bg-white/5 group"
+                onClick={() => setShowHistory(false)}
+              >
+                <div className="min-w-0">
+                  <p className="text-xs text-white/80 truncate">{r.title}</p>
+                  <p className="text-[10px] text-white/30 font-mono">
+                    {new Date(r.generatedAt).toLocaleString()}
+                  </p>
+                </div>
+                <ExternalLink size={11} className="text-white/20 group-hover:text-white/50 shrink-0" />
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Status messages */}
+      {!smtpConfigured && !busy && (
+        <span className="text-xs text-white/30 hidden lg:block">
+          Configure SMTP to email reports
+        </span>
+      )}
       {emailSent && (
         <span className="flex items-center gap-1.5 text-sm text-green-400">
-          <Mail size={14} />
-          Email sent
+          <Mail size={14} /> Email sent
         </span>
       )}
-
       {error && (
         <span className="flex items-center gap-1.5 text-sm text-red-400">
-          <AlertCircle size={14} />
-          {error}
+          <AlertCircle size={14} /> {error}
         </span>
       )}
-
       {!busy && !error && !emailSent && smtpConfigured && (
         <span className="flex items-center gap-1 text-xs text-white/40">
-          <CheckCircle size={12} />
-          Will email on HTML download
+          <CheckCircle size={12} /> Will email on Org Report
         </span>
       )}
     </div>
   );
+}
+
+function downloadHtml(html: string, filename: string) {
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function openPrintWindow(html: string) {
+  const win = window.open("", "_blank");
+  if (!win) throw new Error("Pop-up blocked — allow pop-ups and try again");
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 800);
 }

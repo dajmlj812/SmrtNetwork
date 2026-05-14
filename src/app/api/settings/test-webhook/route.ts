@@ -11,59 +11,48 @@ export async function POST(req: NextRequest) {
     }
 
     const webhooks = getWebhookConfig();
-    const url = channel === "slack" ? webhooks.slack : webhooks.teams;
+    const urls = channel === "slack" ? webhooks.slack : webhooks.teams;
 
-    if (!url) {
+    if (urls.length === 0) {
       return NextResponse.json(
         { ok: false, error: `${channel === "slack" ? "Slack" : "Teams"} webhook URL is not configured` },
         { status: 400 }
       );
     }
 
-    if (channel === "slack") {
-      const payload = {
-        text: "✅ *SmrtNetwork* — this is a test message from your webhook configuration.",
-      };
+    // Test the first URL
+    const url = urls[0];
 
+    if (channel === "slack") {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ text: "✅ *SmrtNetwork* — this is a test message from your webhook configuration." }),
       });
-
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        return NextResponse.json(
-          { ok: false, error: `Slack responded ${res.status}: ${text}` },
-          { status: 502 }
-        );
+        return NextResponse.json({ ok: false, error: `Slack responded ${res.status}: ${text}` }, { status: 502 });
       }
-
       return NextResponse.json({ ok: true });
     }
 
     // Teams
-    const payload = {
-      "@type": "MessageCard",
-      "@context": "http://schema.org/extensions",
-      themeColor: "0076D7",
-      summary: "SmrtNetwork test message",
-      title: "SmrtNetwork — Test Message",
-      text: "This is a test message from your SmrtNetwork webhook configuration.",
-    };
-
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        "@type": "MessageCard",
+        "@context": "http://schema.org/extensions",
+        themeColor: "0076D7",
+        summary: "SmrtNetwork test message",
+        title: "SmrtNetwork — Test Message",
+        text: "This is a test message from your SmrtNetwork webhook configuration.",
+      }),
     });
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      return NextResponse.json(
-        { ok: false, error: `Teams responded ${res.status}: ${text}` },
-        { status: 502 }
-      );
+      return NextResponse.json({ ok: false, error: `Teams responded ${res.status}: ${text}` }, { status: 502 });
     }
 
     return NextResponse.json({ ok: true });

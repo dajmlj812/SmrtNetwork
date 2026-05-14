@@ -15,8 +15,9 @@ export interface AppConfig {
   smtpFrom?: string;
   smtpTo?: string;
   alertingEnabled?: boolean;
-  alertThreshold?: number; // health score below this triggers an alert (default 80)
-  alertCooldownMinutes?: number; // minimum minutes between alerts for same network (default 60)
+  alertThreshold?: number;
+  alertCooldownMinutes?: number;
+  networkThresholds?: Record<string, number>;
   slackWebhookUrl?: string;
   teamsWebhookUrl?: string;
   reportSchedule?: "none" | "daily" | "weekly";
@@ -85,16 +86,25 @@ export function getAlertingConfig() {
   };
 }
 
+export function getNetworkThreshold(networkId: string): number {
+  const c = readConfig();
+  return c.networkThresholds?.[networkId] ?? c.alertThreshold ?? 80;
+}
+
 export function isAlertMuted(): boolean {
   const until = readConfig().alertMutedUntil;
   if (!until) return false;
   return new Date(until) > new Date();
 }
 
+function splitUrls(val?: string): string[] {
+  return (val ?? "").split(",").map((u) => u.trim()).filter(Boolean);
+}
+
 export function getWebhookConfig() {
   const c = readConfig();
   return {
-    slack: c.slackWebhookUrl ?? "",
-    teams: c.teamsWebhookUrl ?? "",
+    slack: splitUrls(c.slackWebhookUrl),
+    teams: splitUrls(c.teamsWebhookUrl),
   };
 }

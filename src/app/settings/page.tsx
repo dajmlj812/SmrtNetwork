@@ -19,9 +19,13 @@ interface SettingsStatus {
   alertingEnabled: boolean;
   alertThreshold: number;
   alertCooldownMinutes: number;
+  networkThresholds: Record<string, number>;
+  slackWebhookUrl: string;
+  teamsWebhookUrl: string;
   slackWebhookSet: boolean;
   teamsWebhookSet: boolean;
   reportSchedule: string;
+  activeOrgId: string;
   appPasswordSet: boolean;
   alertMutedUntil: string | null;
 }
@@ -121,6 +125,132 @@ function TextField({
           "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500"
         )}
       />
+    </div>
+  );
+}
+
+function NetworkThresholdsSection({
+  orgId,
+  globalThreshold,
+  currentThresholds,
+  onSaved,
+}: {
+  orgId: string;
+  globalThreshold: number;
+  currentThresholds: Record<string, number>;
+  onSaved: () => void;
+}) {
+  const [networks, setNetworks] = useState<{ id: string; name: string }[] | null>(null);
+  const [overrides, setOverrides] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!orgId) return;
+    fetch(`/api/meraki/networks?orgId=${orgId}`)
+      .then((r) => r.json())
+      .then((nets: { id: string; name: string }[]) => {
+        setNetworks(nets);
+        // Populate current overrides as strings
+        const init: Record<string, string> = {};
+        for (const net of nets) {
+          if (currentThresholds[net.id] != null) {
+            init[net.id] = String(currentThresholds[net.id]);
+          }
+        }
+        setOverrides(init);
+      })
+      .catch(() => setNetworks([]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgId]);
+
+  async function handleSave() {
+    setSaving(true);
+    setSaved(false);
+    const parsed: Record<string, number> = {};
+    for (const [id, val] of Object.entries(overrides)) {
+      const n = Number(val);
+      if (!isNaN(n) && val.trim() !== "") parsed[id] = Math.max(0, Math.min(100, n));
+    }
+    try {
+      await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ networkThresholds: parsed }),
+      });
+      onSaved();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-white/10 p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">
+            Per-Network Alert Thresholds
+          </h2>
+          <p className="text-xs text-white/30 mt-0.5">
+            Override the global threshold ({globalThreshold}) for specific networks. Leave blank to use global.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {saved && (
+            <span className="flex items-center gap-1 text-xs text-green-400">
+              <CheckCircle size={12} /> Saved
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || !networks?.length}
+            className="px-3 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-1.5"
+          >
+            {saving && <Loader2 size={12} className="animate-spin" />}
+            Save Thresholds
+          </button>
+        </div>
+      </div>
+
+      {networks === null && (
+        <div className="flex items-center gap-2 text-white/40 text-sm">
+          <Loader2 size={14} className="animate-spin" /> Loading networks…
+        </div>
+      )}
+
+      {networks !== null && networks.length === 0 && (
+        <p className="text-sm text-white/40">No networks found.</p>
+      )}
+
+      {networks !== null && networks.length > 0 && (
+        <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+          {networks.map((net) => (
+            <div key={net.id} className="flex items-center gap-3">
+              <span className="text-sm text-white/70 flex-1 truncate" title={net.name}>
+                {net.name}
+              </span>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={overrides[net.id] ?? ""}
+                onChange={(e) =>
+                  setOverrides((prev) => ({ ...prev, [net.id]: e.target.value }))
+                }
+                placeholder={String(globalThreshold)}
+                className={cn(
+                  "w-20 px-2 py-1 rounded-lg text-sm font-mono text-right",
+                  "bg-white/5 border border-white/10",
+                  "placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-[#1e9c4a]"
+                )}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -647,6 +777,7 @@ export default function SettingsPage() {
                   {slackTestResult.message}
                 </span>
               )}
+              <p className="text-xs text-white/30">Separate multiple webhook URLs with commas to send to multiple Slack channels</p>
             </div>
 
             {/* Teams */}
@@ -695,6 +826,7 @@ export default function SettingsPage() {
                   {teamsTestResult.message}
                 </span>
               )}
+              <p className="text-xs text-white/30">Separate multiple webhook URLs with commas to send to multiple Teams channels</p>
             </div>
           </div>
 
@@ -831,6 +963,19 @@ export default function SettingsPage() {
               )}
             </div>
           </div>
+
+          {/* Per-Network Alert Thresholds */}
+          <NetworkThresholdsSection
+            orgId={status.activeOrgId}
+            globalThreshold={Number(alertThreshold) || 80}
+            currentThresholds={status.networkThresholds ?? {}}
+            onSaved={() => {
+              fetch("/api/settings")
+                .then((r) => r.json())
+                .then((d: SettingsStatus) => setStatus(d))
+                .catch(() => {});
+            }}
+          />
 
           {/* Security */}
           <div className="rounded-xl border border-white/10 p-5 space-y-4">

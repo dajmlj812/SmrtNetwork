@@ -1,5 +1,12 @@
 import { meraki } from "./meraki/client";
-import { getAlertingConfig, getSmtpConfig, getWebhookConfig, readConfig, isAlertMuted } from "./config";
+import {
+  getAlertingConfig,
+  getNetworkThreshold,
+  getSmtpConfig,
+  getWebhookConfig,
+  readConfig,
+  isAlertMuted,
+} from "./config";
 import { writeSnapshot } from "./snapshots";
 import { writeAlertLogEntry } from "./alert-log";
 import { generateReportHtml } from "./report";
@@ -8,12 +15,19 @@ import nodemailer from "nodemailer";
 const ORG_ID = "757480";
 const lastAlerted = new Map<string, Date>();
 
+interface AlertStats {
+  online: number;
+  offline: number;
+  alerting: number;
+  total: number;
+}
+
 async function sendEmailAlert(
   networkName: string,
   networkId: string,
   healthScore: number,
   threshold: number,
-  stats: { online: number; offline: number; alerting: number; total: number }
+  stats: AlertStats
 ): Promise<void> {
   const smtp = getSmtpConfig();
   if (!smtp.host || !smtp.user || !smtp.pass || !smtp.to) return;
@@ -49,15 +63,7 @@ async function sendEmailAlert(
     console.error("[Poller] Email alert failed:", error);
   }
 
-  writeAlertLogEntry({
-    networkId,
-    networkName,
-    healthScore,
-    threshold,
-    channel: "email",
-    success,
-    error,
-  });
+  writeAlertLogEntry({ networkId, networkName, healthScore, threshold, channel: "email", success, error });
 }
 
 async function sendSlackAlert(
@@ -65,10 +71,10 @@ async function sendSlackAlert(
   networkId: string,
   healthScore: number,
   threshold: number,
-  stats: { online: number; offline: number; alerting: number; total: number }
-): Promise<boolean> {
+  stats: AlertStats
+): Promise<void> {
   const { slack } = getWebhookConfig();
-  if (!slack) return false;
+  if (slack.length === 0) return;
 
   const payload = {
     text: `⚠️ *${networkName}* health dropped to *${healthScore}%*`,
@@ -76,10 +82,10 @@ async function sendSlackAlert(
       {
         color: "danger",
         fields: [
-          { title: "Online", value: String(stats.online), short: true },
-          { title: "Offline", value: String(stats.offline), short: true },
+          { title: "Online",   value: String(stats.online),   short: true },
+          { title: "Offline",  value: String(stats.offline),  short: true },
           { title: "Alerting", value: String(stats.alerting), short: true },
-          { title: "Total", value: String(stats.total), short: true },
+          { title: "Total",    value: String(stats.total),    short: true },
         ],
       },
     ],
@@ -88,33 +94,22 @@ async function sendSlackAlert(
   let success = true;
   let error: string | undefined;
 
-  try {
-    const res = await fetch(slack, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`Slack responded ${res.status}: ${text}`);
+  for (const url of slack) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`Slack ${res.status}: ${await res.text().catch(() => "")}`);
+    } catch (err) {
+      success = false;
+      error = err instanceof Error ? err.message : String(err);
+      console.error("[Poller] Slack alert failed:", error);
     }
-  } catch (err) {
-    success = false;
-    error = err instanceof Error ? err.message : String(err);
-    console.error("[Poller] Slack alert failed:", error);
   }
 
-  writeAlertLogEntry({
-    networkId,
-    networkName,
-    healthScore,
-    threshold,
-    channel: "slack",
-    success,
-    error,
-  });
-
-  return success;
+  writeAlertLogEntry({ networkId, networkName, healthScore, threshold, channel: "slack", success, error });
 }
 
 async function sendTeamsAlert(
@@ -122,17 +117,16 @@ async function sendTeamsAlert(
   networkId: string,
   healthScore: number,
   threshold: number,
-  stats: { online: number; offline: number; alerting: number; total: number }
-): Promise<boolean> {
+  stats: AlertStats
+): Promise<void> {
   const { teams } = getWebhookConfig();
-  if (!teams) return false;
+  if (teams.length === 0) return;
 
-  const summary = `${networkName} health dropped to ${healthScore}%`;
   const payload = {
     "@type": "MessageCard",
     "@context": "http://schema.org/extensions",
     themeColor: "FF0000",
-    summary,
+    summary: `${networkName} health dropped to ${healthScore}%`,
     title: `⚠️ SmrtNetwork Alert — ${networkName}`,
     text: `**${networkName}** health score dropped to **${healthScore}%**. Online: ${stats.online} | Offline: ${stats.offline} | Alerting: ${stats.alerting} | Total: ${stats.total}`,
   };
@@ -140,33 +134,22 @@ async function sendTeamsAlert(
   let success = true;
   let error: string | undefined;
 
-  try {
-    const res = await fetch(teams, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`Teams responded ${res.status}: ${text}`);
+  for (const url of teams) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`Teams ${res.status}: ${await res.text().catch(() => "")}`);
+    } catch (err) {
+      success = false;
+      error = err instanceof Error ? err.message : String(err);
+      console.error("[Poller] Teams alert failed:", error);
     }
-  } catch (err) {
-    success = false;
-    error = err instanceof Error ? err.message : String(err);
-    console.error("[Poller] Teams alert failed:", error);
   }
 
-  writeAlertLogEntry({
-    networkId,
-    networkName,
-    healthScore,
-    threshold,
-    channel: "teams",
-    success,
-    error,
-  });
-
-  return success;
+  writeAlertLogEntry({ networkId, networkName, healthScore, threshold, channel: "teams", success, error });
 }
 
 async function pollNetworks(): Promise<void> {
@@ -184,42 +167,43 @@ async function pollNetworks(): Promise<void> {
       const total = devices.length;
       if (total === 0) continue;
 
-      const online = devices.filter((d) => d.status === "online").length;
-      const offline = devices.filter((d) => d.status === "offline").length;
+      const online   = devices.filter((d) => d.status === "online").length;
+      const offline  = devices.filter((d) => d.status === "offline").length;
       const alerting = devices.filter((d) => d.status === "alerting").length;
-      const dormant = devices.filter((d) => d.status === "dormant").length;
+      const dormant  = devices.filter((d) => d.status === "dormant").length;
       const healthScore = Math.round((online / total) * 100);
 
-      // Save snapshot
+      // Fetch actual connected client count (non-fatal)
+      let clientCount = 0;
+      try {
+        const clients = await meraki.clients.listByNetwork(network.id, 300);
+        clientCount = clients.length;
+      } catch {
+        clientCount = 0;
+      }
+
       writeSnapshot({
         networkId: network.id,
         networkName: network.name,
-        stats: {
-          total,
-          online,
-          offline,
-          alerting,
-          dormant,
-          clientCount: 0,
-          healthScore,
-        },
+        stats: { total, online, offline, alerting, dormant, clientCount, healthScore },
       });
 
-      // Check threshold
-      if (healthScore < config.threshold) {
+      // Use per-network override, else fall back to global threshold
+      const threshold = getNetworkThreshold(network.id);
+
+      if (healthScore < threshold) {
         const last = lastAlerted.get(network.id);
         const cooldownMs = config.cooldownMinutes * 60 * 1000;
         if (!last || Date.now() - last.getTime() > cooldownMs) {
           if (isAlertMuted()) {
-            console.log(`[Poller] Alerts muted — skipping notifications for ${network.name}`);
+            console.log(`[Poller] Alerts muted — skipping ${network.name}`);
             continue;
           }
           lastAlerted.set(network.id, new Date());
           const stats = { online, offline, alerting, total };
-
-          await sendEmailAlert(network.name, network.id, healthScore, config.threshold, stats);
-          await sendSlackAlert(network.name, network.id, healthScore, config.threshold, stats);
-          await sendTeamsAlert(network.name, network.id, healthScore, config.threshold, stats);
+          await sendEmailAlert(network.name, network.id, healthScore, threshold, stats);
+          await sendSlackAlert(network.name, network.id, healthScore, threshold, stats);
+          await sendTeamsAlert(network.name, network.id, healthScore, threshold, stats);
         }
       }
     }
@@ -245,26 +229,23 @@ async function sendScheduledReport(): Promise<void> {
 
     for (const network of networks) {
       const devices = statuses.filter((d) => d.networkId === network.id);
-      const total = devices.length;
-      const online = devices.filter((d) => d.status === "online").length;
+      const total   = devices.length;
+      const online  = devices.filter((d) => d.status === "online").length;
       const offline = devices.filter((d) => d.status === "offline").length;
       const alerting = devices.filter((d) => d.status === "alerting").length;
-      const dormant = devices.filter((d) => d.status === "dormant").length;
-      const clientCount = 0;
-
-      const deviceRows = devices.map((d) => ({
-        name: d.name ?? d.serial,
-        model: d.model,
-        status: d.status ?? "unknown",
-        serial: d.serial,
-      }));
+      const dormant  = devices.filter((d) => d.status === "dormant").length;
 
       const reportHtml = generateReportHtml({
         networkId: network.id,
         networkName: network.name,
         generatedAt,
-        stats: { total, online, offline, alerting, dormant, clientCount },
-        devices: deviceRows,
+        stats: { total, online, offline, alerting, dormant, clientCount: 0 },
+        devices: devices.map((d) => ({
+          name: d.name ?? d.serial,
+          model: d.model,
+          status: d.status ?? "unknown",
+          serial: d.serial,
+        })),
         topClients: [],
         alerts: [],
       });
@@ -296,7 +277,6 @@ function msUntilNext(hour: number, dayOfWeek?: number): number {
   const now = new Date();
   const next = new Date(now);
   next.setHours(hour, 0, 0, 0);
-  next.setSeconds(0, 0);
 
   if (dayOfWeek !== undefined) {
     const daysUntil = (dayOfWeek - now.getDay() + 7) % 7 || 7;
@@ -329,7 +309,6 @@ export function startPoller(): void {
   console.log("[Poller] Started — checking networks every 5 minutes");
 
   const schedule = readConfig().reportSchedule ?? "none";
-
   if (schedule === "daily") {
     scheduleDaily(7, () => sendScheduledReport().catch(console.error));
     console.log("[Poller] Scheduled report: daily at 7am");
