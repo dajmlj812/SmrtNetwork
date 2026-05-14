@@ -1,4 +1,3 @@
-import { schedule as cronSchedule } from "node-cron";
 import { meraki } from "./meraki/client";
 import { getAlertingConfig, getSmtpConfig, getWebhookConfig, readConfig, isAlertMuted } from "./config";
 import { writeSnapshot } from "./snapshots";
@@ -293,25 +292,49 @@ async function sendScheduledReport(): Promise<void> {
   }
 }
 
+function msUntilNext(hour: number, dayOfWeek?: number): number {
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(hour, 0, 0, 0);
+  next.setSeconds(0, 0);
+
+  if (dayOfWeek !== undefined) {
+    const daysUntil = (dayOfWeek - now.getDay() + 7) % 7 || 7;
+    next.setDate(now.getDate() + daysUntil);
+  } else if (next <= now) {
+    next.setDate(next.getDate() + 1);
+  }
+
+  return Math.max(next.getTime() - now.getTime(), 0);
+}
+
+function scheduleDaily(hour: number, fn: () => void): void {
+  const delay = msUntilNext(hour);
+  setTimeout(function run() {
+    fn();
+    setTimeout(run, msUntilNext(hour));
+  }, delay);
+}
+
+function scheduleWeekly(dayOfWeek: number, hour: number, fn: () => void): void {
+  const delay = msUntilNext(hour, dayOfWeek);
+  setTimeout(function run() {
+    fn();
+    setTimeout(run, msUntilNext(hour, dayOfWeek));
+  }, delay);
+}
+
 export function startPoller(): void {
-  // Run every 5 minutes
-  cronSchedule("*/5 * * * *", () => {
-    pollNetworks().catch(console.error);
-  });
+  setInterval(() => pollNetworks().catch(console.error), 5 * 60 * 1000);
   console.log("[Poller] Started — checking networks every 5 minutes");
 
-  // Schedule reports based on config
   const schedule = readConfig().reportSchedule ?? "none";
 
   if (schedule === "daily") {
-    cronSchedule("0 7 * * *", () => {
-      sendScheduledReport().catch(console.error);
-    });
+    scheduleDaily(7, () => sendScheduledReport().catch(console.error));
     console.log("[Poller] Scheduled report: daily at 7am");
   } else if (schedule === "weekly") {
-    cronSchedule("0 7 * * 1", () => {
-      sendScheduledReport().catch(console.error);
-    });
+    scheduleWeekly(1, 7, () => sendScheduledReport().catch(console.error));
     console.log("[Poller] Scheduled report: Monday at 7am");
   }
 }
