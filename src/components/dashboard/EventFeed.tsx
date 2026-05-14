@@ -71,7 +71,7 @@ export function EventFeed() {
     staleTime: 20_000,
   });
 
-  if (!selectedNetwork) return null;
+  if (!selectedNetwork || isError) return null;
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
@@ -92,11 +92,6 @@ export function EventFeed() {
             <EventSkeleton key={i} />
           ))}
         </div>
-      )}
-
-      {/* Error state */}
-      {isError && (
-        <p className="text-sm text-red-400">Failed to load events.</p>
       )}
 
       {/* Empty state */}

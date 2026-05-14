@@ -14,7 +14,11 @@ export async function GET(req: NextRequest) {
     const events = await meraki.events.list(networkId, perPage);
     return NextResponse.json(events);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = err instanceof Error ? err.message : "";
+    // Meraki returns 400/404 for network types that don't support events — treat as empty
+    if (message.includes("400") || message.includes("404") || message.includes("not supported")) {
+      return NextResponse.json([]);
+    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
