@@ -34,15 +34,11 @@
 
 ---
 
-### Multi-recipient webhooks not supported
+## Fixed in v0.3.0
 
-**Symptom:** Only one Slack webhook URL and one Teams webhook URL can be configured.
-
-**Workaround:** Point the webhook at a channel that forwards to multiple destinations, or use Slack/Teams workflow automation.
-
-**Fix planned:** v0.3.0.
-
----
+| Bug | Fixed in |
+|---|---|
+| Only one Slack / Teams webhook URL supported | v0.3.0 |
 
 ## Fixed in v0.2.0
 

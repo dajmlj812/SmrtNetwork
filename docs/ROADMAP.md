@@ -4,75 +4,62 @@ Features planned for future releases. Priority order within each version is appr
 
 ---
 
-## v0.3.0 — Reporting & visualization
+## v0.6.0 — Platform & packaging
 
-**Enhanced reports**
-- Per-network report (current reports are org-wide)
-- Scheduled reports per network with different recipients
-- Report history — keep last N reports in `%APPDATA%\SmrtNetwork\`
-
-**Visualization**
-- Client count trend chart over time per network
-- Bandwidth trend per network (sent/recv history from snapshots)
-- Per-device uplink history exported to the topology hover panel
-
-**Alerting**
-- Multiple Slack / Teams webhook URLs (comma-separated or list UI)
-- Per-network alert threshold overrides
-- Alert log includes network name column in CSV export
-
----
-
-## v0.4.0 — Security & enterprise
-
-**Authentication**
-- LDAP / Active Directory authentication option
-- Role-based access (read-only vs admin)
-- Session timeout configuration
-
-**Code signing**
-- Windows exe signed with a trusted certificate (removes SmartScreen prompt)
-
-**Audit logging**
-- Log all settings changes with timestamp and (if auth is enabled) user
-- Exportable audit trail
-
----
-
-## v0.5.0 — Integrations
-
-**Ticketing**
-- ServiceNow: auto-create incident when health score drops below threshold
-- Jira: create issue from device diagnosis panel
-
-**Monitoring platforms**
-- Export health scores to InfluxDB / Grafana
-- SNMP trap receiver for Meraki alerts
-- Webhook outbound for any health event (generic JSON payload)
-
-**Client tagging**
-- Tag clients with a name or group (stored locally)
-- Filter client list by tag
-- Include tags in CSV export and AI context
-
----
-
-## Backlog (unscheduled)
-
-- macOS / Linux packaging (pkg or similar)
+**Packaging**
+- macOS packaging (pkg or similar)
+- Linux packaging (AppImage or similar)
 - Progressive Web App (PWA) manifest for installable browser experience
-- Dark mode per-user preference when multiple users share an instance
-- Meraki camera thumbnail previews (MV cameras)
+
+**Monitoring**
 - Cellular gateway (MG) signal strength and data usage panel
 - MT sensor readings (temperature, humidity, door state)
+- Meraki camera thumbnail previews (MV cameras)
+
+**Alerting & AI**
 - Organization health score summary email (one email covering all networks)
 - Natural language alert creation ("alert me when Office Network goes below 70")
+- Per-user dark mode preference when multiple users share an instance
+
+**UI polish**
 - Keyboard shortcut reference (? key)
 - Clickable network names in event feed and alert log navigate to that network
 
 ---
 
+## Backlog (unscheduled)
+
+- Windows code signing (removes SmartScreen prompt; requires ~$300–500/yr cert)
+- SNMP trap receiver for Meraki alerts (not practical in Next.js; would require a separate service)
+- Scheduled per-network reports with different recipients per network
+- Bandwidth trend per network (sent/recv history from snapshots)
+- Per-device uplink history exported to the topology hover panel
+
+---
+
 ## Shipped
+
+### v0.5.0
+- ServiceNow: auto-creates incident when health alert fires (configurable group/category/CMDB CI)
+- Jira: "Create Jira Issue" from device AI diagnosis modal
+- InfluxDB: time-series health metrics written on every 5-minute poll (v1 and v2 support)
+- Generic health webhook: JSON POST to any URL(s) on health alert
+- Client tagging: label + group per MAC, inline edit panel, badge in table, group filter, CSV columns, AI context injection
+- Alert log channel types extended: webhook, servicenow
+
+### v0.4.0
+- LDAP / Active Directory authentication with group-based role assignment
+- Role-based access: admin vs. read-only; read-only users see everything but cannot change settings
+- Read-only PIN — separate password for view-only access
+- Session timeout configuration (1–365 days)
+- Audit logging: all logins, settings saves, and password changes (last 1,000 entries, CSV export)
+
+### v0.3.0
+- Per-network HTML report with device + client data; saved to report history
+- Report history: last 15 reports accessible from the Dashboard Report button
+- Multiple Slack / Teams webhook URLs (comma-separated)
+- Per-network alert threshold overrides in Settings
+- Client count trend chart on the dashboard (24-hour history from poller snapshots)
 
 ### v0.2.0
 - Network topology map (SVG, status-colored nodes, layer grouping, hover tooltips)
