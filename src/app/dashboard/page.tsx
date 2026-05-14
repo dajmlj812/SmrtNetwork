@@ -8,12 +8,10 @@ import { ReportButton } from "@/components/dashboard/ReportButton";
 import { SnapshotChart } from "@/components/dashboard/SnapshotChart";
 import { PollerStatus } from "@/components/dashboard/PollerStatus";
 import { EventFeed } from "@/components/dashboard/EventFeed";
-import { UpdateBanner } from "@/components/layout/UpdateBanner";
 
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
-      <UpdateBanner />
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Network Dashboard</h1>
         <ReportButton />

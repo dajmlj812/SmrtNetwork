@@ -5,6 +5,7 @@ import { QueryProvider } from "@/components/providers/QueryProvider";
 import { NetworkProvider } from "@/lib/context/NetworkContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
+import { UpdateBanner } from "@/components/layout/UpdateBanner";
 import { headers, cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createHash } from "crypto";
@@ -42,9 +43,12 @@ export default async function RootLayout({
           <QueryProvider>
             <NetworkProvider>
               <GlobalSearch />
-              <div className="flex h-screen bg-background text-foreground">
-                <Sidebar />
-                <main className="flex-1 overflow-auto p-6 pt-12 md:pt-6">{children}</main>
+              <div className="flex flex-col h-screen bg-background text-foreground">
+                <UpdateBanner />
+                <div className="flex flex-1 overflow-hidden">
+                  <Sidebar />
+                  <main className="flex-1 overflow-auto p-6 pt-12 md:pt-6">{children}</main>
+                </div>
               </div>
             </NetworkProvider>
           </QueryProvider>
