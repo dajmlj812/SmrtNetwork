@@ -80,7 +80,7 @@ async function main() {
 
   console.log('');
   console.log('  ╔══════════════════════════════════════╗');
-  console.log('  ║       SmrtNetwork v' + version.padEnd(18) + '║');
+  console.log('  ║       SmrtNetwork v${version.padEnd(18)}║');
   console.log('  ╚══════════════════════════════════════╝');
   console.log('');
   console.log('  URL        : ' + url);
@@ -91,6 +91,9 @@ async function main() {
   console.log('');
 
   setTimeout(() => exec('start "" "' + url + '"'), 3000);
+
+  // Ensure CWD matches the extraction dir so Next.js can find its assets
+  process.chdir(__dirname);
 
   // Start Next.js standalone server
   require('./server.js');
