@@ -74,7 +74,7 @@ export const meraki = {
   clients: {
     listByNetwork: (networkId: string, timespan = 86400) =>
       merakiFetch<Client[]>(`/networks/${networkId}/clients`, {
-        params: { timespan: String(timespan) },
+        params: { timespan: String(timespan), perPage: "1000" },
       }),
 
     listByDevice: (serial: string, timespan = 86400) =>
