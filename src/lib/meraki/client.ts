@@ -108,7 +108,7 @@ export const meraki = {
       ),
     connectionStats: (networkId: string, params: Record<string, string>) =>
       merakiFetch<WirelessConnectionStats>(
-        `/networks/${networkId}/wireless/clients/connectionStats`,
+        `/networks/${networkId}/wireless/connectionStats`,
         { params }
       ),
   },
