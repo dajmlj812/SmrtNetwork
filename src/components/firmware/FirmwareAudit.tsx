@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNetwork } from "@/lib/context/NetworkContext";
-import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { FirmwareGroup } from "@/app/api/meraki/firmware/route";
 
@@ -17,6 +17,18 @@ function SkeletonRow() {
       ))}
     </tr>
   );
+}
+
+function getFirmwareDocsUrl(productType: string): string {
+  const map: Record<string, string> = {
+    wireless:        "https://documentation.meraki.com/MR/MR_-_Wireless/MR_Firmware_Changelog",
+    switch:          "https://documentation.meraki.com/MS/MS_-_Layer_3_Switch/MS_Firmware_Changelog",
+    appliance:       "https://documentation.meraki.com/MX/MX_-_Security_%26_SD-WAN/MX_Firmware_Changelog",
+    cellularGateway: "https://documentation.meraki.com/MG/MG_-_Cellular_Gateway/MG_Firmware_Changelog",
+    camera:          "https://documentation.meraki.com/MV/MV_-_Smart_Camera/MV_Firmware_Changelog",
+    sensor:          "https://documentation.meraki.com/MT/MT_-_Sensor/MT_Firmware_Changelog",
+  };
+  return map[productType] ?? "https://documentation.meraki.com/General_Administration/Firmware_Upgrades/";
 }
 
 function ProductTypeSection({
@@ -84,8 +96,16 @@ function ProductTypeSection({
                     key={group.firmware}
                     className="border-b border-white/5 last:border-0 hover:bg-white/[0.02]"
                   >
-                    <td className="px-5 py-3 font-mono text-xs text-white/80">
-                      {group.firmware}
+                    <td className="px-5 py-3">
+                      <a
+                        href={getFirmwareDocsUrl(productType)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 font-mono text-xs text-white/80 hover:text-[#30ba67] transition-colors group"
+                      >
+                        {group.firmware}
+                        <ExternalLink size={11} className="opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
+                      </a>
                     </td>
                     <td className="px-5 py-3 text-white/70">
                       {group.count}

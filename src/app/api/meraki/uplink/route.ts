@@ -27,8 +27,19 @@ export async function GET(req: NextRequest) {
     // Cap at 3 to avoid rate limits
     const limited = appliances.slice(0, 3);
 
+    const timespanSeconds = Number(req.nextUrl.searchParams.get("timespan") ?? "86400");
+    const clampedTimespan = [3600, 21600, 86400, 604800, 2592000].includes(timespanSeconds)
+      ? timespanSeconds
+      : 86400;
+
+    // Coarser resolution for longer spans to stay within Meraki data-point limits
+    const resolution =
+      clampedTimespan <= 3600 ? "60" :
+      clampedTimespan <= 21600 ? "300" :
+      clampedTimespan <= 86400 ? "600" : "3600";
+
     const now = new Date();
-    const t0 = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+    const t0 = new Date(now.getTime() - clampedTimespan * 1000).toISOString();
     const t1 = now.toISOString();
 
     const results = await Promise.all(
@@ -37,7 +48,7 @@ export async function GET(req: NextRequest) {
           const history = await meraki.devices.lossAndLatency(device.serial, {
             t0,
             t1,
-            resolution: "600",
+            resolution,
             uplink: "wan1",
           });
           return {

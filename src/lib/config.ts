@@ -22,6 +22,7 @@ export interface AppConfig {
   reportSchedule?: "none" | "daily" | "weekly";
   activeOrgId?: string;
   appPasswordHash?: string;
+  alertMutedUntil?: string;
 }
 
 export function readConfig(): AppConfig {
@@ -82,6 +83,12 @@ export function getAlertingConfig() {
     threshold: c.alertThreshold ?? 80,
     cooldownMinutes: c.alertCooldownMinutes ?? 60,
   };
+}
+
+export function isAlertMuted(): boolean {
+  const until = readConfig().alertMutedUntil;
+  if (!until) return false;
+  return new Date(until) > new Date();
 }
 
 export function getWebhookConfig() {

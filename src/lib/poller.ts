@@ -1,6 +1,6 @@
 import { schedule as cronSchedule } from "node-cron";
 import { meraki } from "./meraki/client";
-import { getAlertingConfig, getSmtpConfig, getWebhookConfig, readConfig } from "./config";
+import { getAlertingConfig, getSmtpConfig, getWebhookConfig, readConfig, isAlertMuted } from "./config";
 import { writeSnapshot } from "./snapshots";
 import { writeAlertLogEntry } from "./alert-log";
 import { generateReportHtml } from "./report";
@@ -211,6 +211,10 @@ async function pollNetworks(): Promise<void> {
         const last = lastAlerted.get(network.id);
         const cooldownMs = config.cooldownMinutes * 60 * 1000;
         if (!last || Date.now() - last.getTime() > cooldownMs) {
+          if (isAlertMuted()) {
+            console.log(`[Poller] Alerts muted — skipping notifications for ${network.name}`);
+            continue;
+          }
           lastAlerted.set(network.id, new Date());
           const stats = { online, offline, alerting, total };
 

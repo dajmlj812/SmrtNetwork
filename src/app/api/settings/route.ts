@@ -42,6 +42,7 @@ export async function GET() {
     reportSchedule: config.reportSchedule ?? "none",
     activeOrgId: getActiveOrgId(),
     appPasswordSet: !!config.appPasswordHash,
+    alertMutedUntil: config.alertMutedUntil ?? null,
   });
 }
 
@@ -64,6 +65,7 @@ export async function POST(req: NextRequest) {
       teamsWebhookUrl?: string;
       reportSchedule?: string;
       activeOrgId?: string;
+      alertMutedUntil?: string;
     };
 
     const updates: Partial<{
@@ -106,6 +108,9 @@ export async function POST(req: NextRequest) {
       }
     }
     if (body.activeOrgId?.trim()) updates.activeOrgId = body.activeOrgId.trim();
+    if ('alertMutedUntil' in body) {
+      (updates as Record<string, unknown>).alertMutedUntil = body.alertMutedUntil?.trim() || undefined;
+    }
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "No valid fields provided" }, { status: 400 });

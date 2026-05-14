@@ -23,6 +23,7 @@ interface SettingsStatus {
   teamsWebhookSet: boolean;
   reportSchedule: string;
   appPasswordSet: boolean;
+  alertMutedUntil: string | null;
 }
 
 function KeyField({
@@ -160,6 +161,10 @@ export default function SettingsPage() {
 
   // Report schedule
   const [reportSchedule, setReportSchedule] = useState("none");
+
+  // Alert muting
+  const [muteUntilInput, setMuteUntilInput] = useState("");
+  const [savingMute, setSavingMute] = useState(false);
 
   // Security (password)
   const [newPass, setNewPass] = useState("");
@@ -518,13 +523,24 @@ export default function SettingsPage() {
                 value={smtpFrom}
                 onChange={setSmtpFrom}
               />
-              <TextField
-                label="To Address"
-                fieldKey="smtpTo"
-                placeholder="noc@example.com"
-                value={smtpTo}
-                onChange={setSmtpTo}
-              />
+              <div className="space-y-1.5">
+                <label htmlFor="smtpTo" className="text-sm font-medium text-white/80 block">
+                  To Address
+                </label>
+                <input
+                  id="smtpTo"
+                  type="text"
+                  value={smtpTo}
+                  onChange={(e) => setSmtpTo(e.target.value)}
+                  placeholder="recipient@company.com, ops@company.com"
+                  className={cn(
+                    "w-full px-3 py-2 rounded-lg text-sm font-mono",
+                    "bg-white/5 border border-white/10",
+                    "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  )}
+                />
+                <p className="text-xs text-white/40 mt-1">Separate multiple addresses with commas</p>
+              </div>
             </div>
 
             <div className="flex items-center gap-3 pt-1">
@@ -744,6 +760,75 @@ export default function SettingsPage() {
                 />
                 <p className="text-xs text-white/30">Minimum minutes between alerts for same network. Default: 60</p>
               </div>
+            </div>
+
+            <div className="pt-2 border-t border-white/10 space-y-3">
+              <label className="text-sm font-medium text-white/80">Mute Alerts</label>
+              {status.alertMutedUntil && new Date(status.alertMutedUntil) > new Date() ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-yellow-400">
+                    Muted until {new Date(status.alertMutedUntil).toLocaleString()}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={savingMute}
+                    onClick={async () => {
+                      setSavingMute(true);
+                      try {
+                        await fetch("/api/settings", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ alertMutedUntil: "" }),
+                        });
+                        const fresh = await fetch("/api/settings").then((r) => r.json()) as SettingsStatus;
+                        setStatus(fresh);
+                      } finally {
+                        setSavingMute(false);
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 disabled:opacity-40 text-sm transition-colors"
+                  >
+                    Clear Mute
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <input
+                    type="datetime-local"
+                    value={muteUntilInput}
+                    onChange={(e) => setMuteUntilInput(e.target.value)}
+                    className={cn(
+                      "px-3 py-2 rounded-lg text-sm font-mono",
+                      "bg-white/5 border border-white/10",
+                      "focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    )}
+                  />
+                  <button
+                    type="button"
+                    disabled={savingMute || !muteUntilInput}
+                    onClick={async () => {
+                      if (!muteUntilInput) return;
+                      setSavingMute(true);
+                      try {
+                        await fetch("/api/settings", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ alertMutedUntil: new Date(muteUntilInput).toISOString() }),
+                        });
+                        const fresh = await fetch("/api/settings").then((r) => r.json()) as SettingsStatus;
+                        setStatus(fresh);
+                        setMuteUntilInput("");
+                      } finally {
+                        setSavingMute(false);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    {savingMute && <Loader2 size={13} className="animate-spin" />}
+                    Mute Alerts
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

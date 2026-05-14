@@ -40,8 +40,11 @@ export function writeSnapshot(
     id: uuidv4(),
     capturedAt: new Date().toISOString(),
   };
-  // Keep last 1000 snapshots total, trimming oldest
-  const trimmed = [...all, entry].slice(-1000);
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const recent = [...all, entry].filter(
+    (s) => new Date(s.capturedAt) >= thirtyDaysAgo
+  );
+  const trimmed = recent.slice(-2000);
   writeFileSync(SNAPSHOTS_FILE, JSON.stringify(trimmed, null, 2));
   return entry;
 }

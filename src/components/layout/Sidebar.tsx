@@ -24,6 +24,7 @@ import {
   Search,
   Cpu,
   LogOut,
+  Share2,
 } from "lucide-react";
 import { NetworkSelector } from "@/components/layout/NetworkSelector";
 import { OrgSelector } from "@/components/layout/OrgSelector";
@@ -34,6 +35,7 @@ const nav: { href: Route; label: string; icon: React.ElementType }[] = [
   { href: "/overview" as Route, label: "Overview", icon: Globe },
   { href: "/compare" as Route, label: "Compare", icon: GitCompare },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/topology" as Route, label: "Topology", icon: Share2 },
   { href: "/chat" as Route, label: "Ask AI", icon: MessageSquare },
   { href: "/devices", label: "Devices", icon: Monitor },
   { href: "/firmware" as Route, label: "Firmware", icon: Cpu },
