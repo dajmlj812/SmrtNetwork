@@ -88,9 +88,9 @@ export function TrafficChart() {
       )}
 
       {selectedNetwork && data && data.length > 0 && (
-        <ResponsiveContainer width="100%" height={280}>
+        <ResponsiveContainer width="100%" height={Math.max(280, data.length * 34)}>
           <BarChart
-            data={data.slice(0, 10).map((c) => ({
+            data={data.map((c) => ({
               name: clientLabel(c),
               Download: c.recv,
               Upload: c.sent,

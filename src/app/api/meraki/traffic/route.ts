@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
         total: c.usage.sent + c.usage.recv,
       }))
       .sort((a, b) => b.total - a.total)
-      .slice(0, 15);
+      .slice(0, 25);
 
     return NextResponse.json(topClients);
   } catch (err) {

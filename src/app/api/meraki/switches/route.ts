@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const devices = await meraki.devices.list(networkId);
-    const switches = devices.filter((d) => d.model.startsWith("MS")).slice(0, 5);
+    const switches = devices.filter((d) => d.model.startsWith("MS"));
 
     const results = await Promise.all(
       switches.map(async (sw) => {
