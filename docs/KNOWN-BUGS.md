@@ -34,6 +34,13 @@
 
 ---
 
+## Fixed in v0.6.0
+
+| Bug | Fixed in |
+|---|---|
+| Dark mode preference lost on hard refresh (FOUC) | v0.6.0 — now cookie-backed |
+| Topology hover panel had no live data (static text only) | v0.6.0 — uplink sparkline added for MX/Z |
+
 ## Fixed in v0.3.0
 
 | Bug | Fixed in |

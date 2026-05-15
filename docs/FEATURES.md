@@ -12,14 +12,14 @@
 
 - **Health score card** — 0–100 score with letter grade, calculated from device status and alert counts
 - **Stat cards** — total devices, online, offline/alerting, connected clients; refreshes every 60 seconds
-- **Snapshot trend chart** — 24-hour health score history from background poller snapshots
-- **Live event feed** — recent Meraki events for the selected network (association, VPN changes, reboots)
+- **Snapshot trend chart** — health score history from background poller snapshots
+- **Bandwidth trend chart** — sent/received bytes over the last 48 snapshots (5-minute intervals), area chart with blue/green series
+- **Client count trend chart** — connected client count history alongside the health score trend
+- **Live event feed** — recent Meraki events for the selected network (association, VPN changes, reboots); network name in header links to the Traffic page
 - **Poller status indicator** — shows whether the background health poller is running
-- **Network Report** — generates a per-network device + client HTML report (separate from the org-wide report); saved to report history automatically
-- **Report history** — last 15 generated reports accessible from a dropdown on the Report button; served from local storage
-- **Download HTML** — generates a downloadable org-wide health report; optionally emails it if SMTP is configured
-- **Download PDF** — opens the report in a new browser window and triggers the print dialog (save as PDF via browser)
-- **Client count trend chart** — 24-hour chart of connected client counts alongside the health score trend
+- **Network Report** — generates a per-network device + client HTML report; saved to report history automatically
+- **Report history** — last 15 generated reports accessible from a dropdown on the Report button
+- **Download HTML / PDF** — org-wide health report; optionally emailed if SMTP is configured
 - **Update banner** — notifies when a newer version of SmrtNetwork is available on GitHub
 
 ## Network Topology
@@ -27,7 +27,8 @@
 - SVG device map for the selected network, grouped by layer: Firewall/Router → Switch → Access Point → other categories
 - Nodes color-coded by live status: green (online), yellow (alerting), red (offline), gray (unknown/dormant)
 - Dashed connection lines drawn from each device to its nearest parent layer
-- Hover any node to see: device name, model, serial, LAN IP, WAN IP, and status
+- Hover any node to see: device name, model, serial, LAN IP, WAN IP, status
+- **Uplink history sparkline** — hovering an MX/Z-series appliance shows a 1-hour WAN1 loss/latency sparkline with avg latency and avg packet loss (loads async, does not block the map)
 - Summary chip bar: per-status counts and total device count
 - Available at `/topology` — accessible from the sidebar
 
@@ -78,10 +79,40 @@
 - Expandable peer list with reachability status (reachable / unreachable) per tunnel
 - Third-party VPN peer status where configured
 
+## Cellular Gateways (`/cellular`)
+
+- Org-wide list of all MG cellular gateway uplink statuses (filtered to selected network if one is chosen)
+- Per-gateway cards showing: model, serial, last reported time
+- Per-uplink details: interface, status (active/ready/not connected), provider, IP, connection type, signal type
+- **RSRP/RSRQ signal bars** — visual 4-bar signal strength indicator derived from RSRP (−140 to −44 dBm → 0–100%)
+- Refreshes every 60 seconds
+
+## Sensors (`/sensors`)
+
+- Org-wide list of all MT sensor latest readings (filtered to selected network if one is chosen)
+- Per-sensor cards with network name and last reading timestamp
+- **Metric badges** with icons and color thresholds:
+  - Temperature: green ≤28°C / yellow ≤35°C / red >35°C; shows °C and °F
+  - Humidity: blue >70% RH / yellow <30% / green otherwise
+  - Door: green (closed) / yellow (open) with icon
+  - CO₂: green ≤800 ppm / yellow ≤1000 / red >1000
+- Refreshes every 30 seconds
+
+## Cameras (`/cameras`)
+
+- All MV cameras in the selected network shown as thumbnail cards in a responsive grid
+- **Live snapshots** — generates and displays a snapshot URL for each camera (refreshes on demand)
+- Status badge overlay (online/alerting/offline/dormant) on each thumbnail
+- LAN IP, model, and serial shown per camera
+- **Direct video link** (external icon) opens the camera's live video URL in a new tab
+- Refresh individual cameras or all at once
+- Gracefully shows "Camera offline" or "No preview" for cameras that cannot generate a snapshot
+
 ## Alerts
 
+- **Natural language alert creation** — describe an alert in plain English (e.g. "Alert me on Slack when RJW HQ drops below 75%"); Claude parses network, threshold, and channel with a confidence rating; one-click apply saves the config
 - **Active alerts** — enabled alert profiles for the selected network with notification destinations
-- **Alert log** — history of all triggered health alerts with timestamp, network, score, channel, and message
+- **Alert log** — history of all triggered health alerts with timestamp, network, score, channel, and status; network name is clickable and navigates to the Dashboard with that network selected
 - **AI recommendations** — Claude reviews current alert coverage and suggests gaps or tuning
 - **CSV export** — download the full alert log
 - **Slack webhook** — sends alert notifications to one or more Slack channels (comma-separated URLs)
@@ -130,9 +161,12 @@
 |---|---|
 | API Keys | Meraki API Key, Anthropic API Key, Meraki Base URL |
 | Active Organization | Dropdown of all orgs visible to the API key |
-| Email Reports | SMTP host, port, credentials, from/to addresses (comma-separated), schedule (none/daily/weekly), test button |
+| Email Reports | SMTP host, port, credentials, from/to, schedule (none/daily/weekly at 7am), test button |
+| Org Health Summary Email | Schedule (none/daily/weekly at 8am), optional override recipient |
 | Notifications | Slack webhook URL(s), Teams webhook URL(s), test buttons |
-| Alerting | Enable toggle, health threshold, cooldown minutes, per-network threshold overrides, alert muting |
+| Alerting | Enable toggle, health threshold, cooldown minutes, alert muting |
+| Per-Network Thresholds | Override the global threshold per network |
+| Per-Network Report Recipients | Override SMTP "To" address per network for scheduled reports |
 | Security | Admin password, read-only password, session timeout (days), LDAP / Active Directory |
 | ServiceNow | Enable, instance URL, username/password, assignment group, category, CMDB CI, test button |
 | Jira | Enable, Jira URL, email, API token, project key, issue type, test button |
@@ -159,19 +193,55 @@
 
 ## Dark / Light Mode
 
-- Toggle between dark and light theme from the sidebar
-- Persisted in browser local storage
+- Toggle between dark and light theme from the sidebar footer
+- Persisted in a `smrt-theme` cookie — survives browser restarts and is read server-side to avoid flash-of-unstyled-content
 - Defaults to dark mode
+
+## PWA (Progressive Web App)
+
+- `manifest.json` enables "Install App" prompt in supported browsers (Chrome, Edge, Safari)
+- Standalone display mode — runs without browser chrome when installed
+- Theme color: SmrtNetwork green (`#1e9c4a`)
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|---|---|
+| `Ctrl+K` | Open global search |
+| `?` | Toggle keyboard shortcuts overlay |
+| `Esc` | Close modals / search |
+| `↑ / ↓` | Navigate search results |
+| `Enter` | Select search result |
 
 ## CSV Export
 
 Available on: Clients table, Devices table, Alert Log table. Files use UTF-8 BOM for correct Excel rendering.
 
-## Portable Windows exe
+## Integrations
 
-- Single `.exe` file — no Node.js, no installer
+| Integration | Trigger | What it does |
+|---|---|---|
+| ServiceNow | Health alert fires | Creates an incident with network details, score, and device counts |
+| Jira | AI Diagnose → Create Jira Issue | Creates an issue with device info and Claude's diagnosis |
+| InfluxDB | Every 5-minute poll | Writes `network_health` time-series metrics for Grafana |
+| Health webhook | Health alert fires | POSTs JSON payload to any configured URL(s) |
+
+## Portable Executables
+
+### Windows
+- Single `.exe` file — no Node.js, no installer (`npm run build:exe`)
 - Embeds the Node.js runtime (same version used during build)
 - Finds a free port in 3000–3099 automatically
 - Opens the browser automatically after 3 seconds
 - Config persists in `%APPDATA%\SmrtNetwork\` across runs
 - `SmrtNetwork-Silent.vbs` launcher available for no-console-window operation
+
+### macOS
+- Single binary (`npm run build:mac` → `dist/SmrtNetwork-mac`)
+- Config stored in `~/Library/Application Support/SmrtNetwork/`
+- Opens browser automatically with `open`
+
+### Linux
+- Single binary (`npm run build:linux` → `dist/SmrtNetwork-linux`)
+- Config stored in `~/.config/SmrtNetwork/` (respects `XDG_CONFIG_HOME`)
+- Opens browser with `xdg-open` / `sensible-browser` fallback
