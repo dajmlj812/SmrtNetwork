@@ -16,9 +16,15 @@ export function ThemeToggle() {
 
   const isDark = theme === "dark";
 
+  function toggle() {
+    const next = isDark ? "light" : "dark";
+    setTheme(next);
+    document.cookie = `smrt-theme=${next};path=/;max-age=31536000;SameSite=Lax`;
+  }
+
   return (
     <button
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+      onClick={toggle}
       className="rounded-lg p-1.5 text-white/40 hover:text-white/70 transition-colors"
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >

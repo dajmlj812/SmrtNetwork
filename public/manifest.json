@@ -1,0 +1,23 @@
+{
+  "name": "SmrtNetwork",
+  "short_name": "SmrtNetwork",
+  "description": "Cisco Meraki network intelligence powered by Claude AI — BuildITSmrt, LLC.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0d1020",
+  "theme_color": "#1e9c4a",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-mark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

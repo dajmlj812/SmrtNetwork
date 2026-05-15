@@ -7,6 +7,7 @@ import { RoleProvider, type Role } from "@/lib/context/RoleContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { UpdateBanner } from "@/components/layout/UpdateBanner";
+import { KeyboardShortcutsModal } from "@/components/ui/KeyboardShortcutsModal";
 import { headers, cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createHash } from "crypto";
@@ -15,6 +16,7 @@ import { readConfig } from "@/lib/config";
 export const metadata: Metadata = {
   title: "SmrtNetwork | BuildITSmrt",
   description: "Cisco Meraki network intelligence powered by Claude AI — BuildITSmrt, LLC.",
+  manifest: "/manifest.json",
   icons: {
     icon: "/favicon.ico",
     apple: "/favicon.png",
@@ -72,14 +74,18 @@ export default async function RootLayout({
     }
   }
 
+  const themeCookie = (await cookies()).get("smrt-theme")?.value;
+  const defaultTheme = themeCookie === "light" || themeCookie === "dark" ? themeCookie : "dark";
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme={defaultTheme} enableSystem={false}>
           <QueryProvider>
             <NetworkProvider>
               <RoleProvider role={role}>
                 <GlobalSearch />
+                <KeyboardShortcutsModal />
                 <div className="flex flex-col h-screen bg-background text-foreground">
                   <UpdateBanner />
                   <div className="flex flex-1 overflow-hidden">

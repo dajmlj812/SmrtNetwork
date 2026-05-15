@@ -12,6 +12,10 @@ import type {
   WirelessConnectionStats,
   VpnStatus,
   MerakiEvent,
+  CellularUplinkStatus,
+  SensorReading,
+  CameraSnapshot,
+  AlertProfile,
 } from "./types";
 import { getMerakiApiKey, getMerakiBaseUrl } from "@/lib/config";
 
@@ -89,11 +93,6 @@ export const meraki = {
       merakiFetch<Client>(`/networks/${networkId}/clients/${mac}`),
   },
 
-  alerts: {
-    getSettings: (networkId: string) =>
-      merakiFetch<AlertSettings>(`/networks/${networkId}/alerts/settings`),
-  },
-
   switchPorts: {
     list: (serial: string) =>
       merakiFetch<SwitchPort[]>(`/devices/${serial}/switch/ports`),
@@ -133,5 +132,52 @@ export const meraki = {
       });
       return response.events ?? [];
     },
+  },
+
+  cellular: {
+    uplinkStatuses: (orgId: string) =>
+      merakiFetch<CellularUplinkStatus[]>(
+        `/organizations/${orgId}/cellularGateway/uplink/statuses`
+      ),
+  },
+
+  sensor: {
+    latestReadings: (orgId: string) =>
+      merakiFetch<{ serial: string; network: { id: string; name: string }; readings: SensorReading[] }[]>(
+        `/organizations/${orgId}/sensor/readings/latest`
+      ),
+
+    history: (orgId: string, params: Record<string, string>) =>
+      merakiFetch<{ serial: string; network: { id: string; name: string }; readings: SensorReading[] }[]>(
+        `/organizations/${orgId}/sensor/readings/history`,
+        { params }
+      ),
+  },
+
+  camera: {
+    generateSnapshot: (serial: string) =>
+      merakiFetch<CameraSnapshot>(
+        `/devices/${serial}/camera/generateSnapshot`,
+        { method: "POST" }
+      ),
+
+    videoLink: (serial: string) =>
+      merakiFetch<{ expires: string; url: string }>(
+        `/devices/${serial}/camera/video/link`
+      ),
+  },
+
+  alerts: {
+    getSettings: (networkId: string) =>
+      merakiFetch<AlertSettings>(`/networks/${networkId}/alerts/settings`),
+
+    listProfiles: (networkId: string) =>
+      merakiFetch<AlertProfile[]>(`/networks/${networkId}/alerts/profiles`),
+
+    createProfile: (networkId: string, body: Record<string, unknown>) =>
+      merakiFetch<AlertProfile>(`/networks/${networkId}/alerts/profiles`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
   },
 };

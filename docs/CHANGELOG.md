@@ -4,6 +4,79 @@ All notable changes to SmrtNetwork are documented here.
 
 ---
 
+## v0.6.0 — 2026-05-15
+
+### New features
+
+**PWA / Installable browser app**
+- Added `public/manifest.json` with standalone display, theme color, and icons
+- Browser "Install App" prompt appears automatically for supported browsers
+
+**Per-user dark mode preference**
+- Theme preference is now persisted in a `smrt-theme` cookie, eliminating flash-of-unstyled-content on reload
+- Preference survives browser restarts and syncs across tabs
+
+**Keyboard shortcut reference (?)**
+- Press `?` anywhere (not in an input) to toggle a keyboard shortcuts overlay
+- Lists: Ctrl+K (search), ?, Esc, ↑/↓, Enter
+
+**Clickable network names**
+- Network name in Alert History rows navigates to the Dashboard with that network selected
+- Network name badge in Event Feed header links to the Traffic/Topology page
+
+**Bandwidth trend chart**
+- New "Bandwidth Trend" chart on the Dashboard plots sent/received bytes over the last 48 snapshots
+- Data captured automatically every 5 minutes alongside device health
+
+**MG cellular gateway panel**
+- New `/cellular` page showing all MG cellular gateway uplink statuses
+- Displays provider, connection type, IP, RSRP/RSRQ signal strength with visual bar
+- Scoped to selected network or shows all
+
+**MT sensor readings panel**
+- New `/sensors` page displaying live MT sensor data (temperature, humidity, door, CO₂)
+- Color-coded metric badges with thresholds (e.g. red above 35°C, blue above 70% RH)
+- Refreshes every 30 seconds
+
+**MV camera thumbnail previews**
+- New `/cameras` page with live snapshot thumbnails for all MV cameras in the selected network
+- Shows camera status badge, LAN IP, model, serial, and direct video link
+- Individual and bulk refresh buttons
+
+**Org-wide health summary email**
+- New scheduled email summarising all network health scores in a single message
+- Configurable schedule (daily at 8am / Monday at 8am) and optional override recipient
+- Shows overall org score, per-network breakdown sorted by health, offline/alerting counts
+
+**Natural language alert creation**
+- New "Create Alert with AI" panel on the Alerts page
+- Describe an alert in plain English (e.g. "Alert me on Slack when RJW HQ drops below 75%")
+- Claude parses the intent, extracts network, threshold, and channel with a confidence rating
+- One-click apply saves the threshold to config
+
+**Per-network report recipients**
+- Configure a different email address per network for scheduled reports
+- Falls back to global SMTP "To" if no per-network recipient is set
+- Managed in Settings → Per-Network Report Recipients
+
+**Per-device uplink history in topology hover panel**
+- Hovering over an MX/Z-series appliance in the topology view shows a 1-hour WAN1 sparkline
+- Displays average latency and packet loss inline; loads asynchronously without blocking the map
+
+**macOS packaging**
+- `npm run build:mac` produces `dist/SmrtNetwork-mac` using caxa
+- Config stored in `~/Library/Application Support/SmrtNetwork/`
+
+**Linux packaging**
+- `npm run build:linux` produces `dist/SmrtNetwork-linux` using caxa
+- Config stored in `~/.config/SmrtNetwork/` (respects `XDG_CONFIG_HOME`)
+- Falls back through `xdg-open` → `sensible-browser` → console URL
+
+### Sidebar additions
+- Cellular (MG), Sensors (MT), Cameras (MV) nav items added between VPN and Alerts
+
+---
+
 ## v0.5.0 — 2026-05-14
 
 ### New features

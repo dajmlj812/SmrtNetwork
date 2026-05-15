@@ -85,6 +85,9 @@ export async function GET() {
     influxDbUsername:  integrations.influxDb.username,
     influxDbPasswordSet: integrations.influxDb.passwordSet,
     healthWebhookUrls: integrations.healthWebhookUrls,
+    healthSummarySchedule: config.healthSummarySchedule ?? "none",
+    healthSummaryTo: config.healthSummaryTo ?? "",
+    networkReportRecipients: config.networkReportRecipients ?? {},
   });
 }
 
@@ -109,6 +112,9 @@ export async function POST(req: NextRequest) {
       slackWebhookUrl: string;
       teamsWebhookUrl: string;
       reportSchedule: "none" | "daily" | "weekly";
+      healthSummarySchedule: "none" | "daily" | "weekly";
+      healthSummaryTo: string;
+      networkReportRecipients: Record<string, string>;
       activeOrgId: string;
       alertMutedUntil: string | undefined;
       sessionTimeoutDays: number;
@@ -177,6 +183,17 @@ export async function POST(req: NextRequest) {
       const val = body.reportSchedule;
       if (val === "none" || val === "daily" || val === "weekly")
         updates.reportSchedule = val;
+    }
+    if (body.healthSummarySchedule != null) {
+      const val = body.healthSummarySchedule;
+      if (val === "none" || val === "daily" || val === "weekly")
+        updates.healthSummarySchedule = val;
+    }
+    if (typeof body.healthSummaryTo === "string")
+      updates.healthSummaryTo = body.healthSummaryTo.trim();
+    if (body.networkReportRecipients != null && typeof body.networkReportRecipients === "object") {
+      const existing = readConfig().networkReportRecipients ?? {};
+      updates.networkReportRecipients = { ...existing, ...(body.networkReportRecipients as Record<string, string>) };
     }
     if (typeof body.activeOrgId === "string" && body.activeOrgId.trim())
       updates.activeOrgId = body.activeOrgId.trim();

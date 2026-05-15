@@ -11,9 +11,32 @@ interface UplinkDeviceResult {
 
 export async function GET(req: NextRequest) {
   const networkId = req.nextUrl.searchParams.get("networkId");
+  const serial = req.nextUrl.searchParams.get("serial");
+
+  const timespanSeconds = Number(req.nextUrl.searchParams.get("timespan") ?? "86400");
+  const clampedTimespan = [3600, 21600, 86400, 604800, 2592000].includes(timespanSeconds)
+    ? timespanSeconds
+    : 86400;
+  const resolution =
+    clampedTimespan <= 3600 ? "60" :
+    clampedTimespan <= 21600 ? "300" :
+    clampedTimespan <= 86400 ? "600" : "3600";
+  const now = new Date();
+  const t0 = new Date(now.getTime() - clampedTimespan * 1000).toISOString();
+  const t1 = now.toISOString();
+
+  // Per-device mode: fetch history for a single serial
+  if (serial) {
+    try {
+      const history = await meraki.devices.lossAndLatency(serial, { t0, t1, resolution, uplink: "wan1" });
+      return NextResponse.json([{ serial, history }]);
+    } catch {
+      return NextResponse.json([{ serial, history: [] }]);
+    }
+  }
 
   if (!networkId) {
-    return NextResponse.json({ error: "networkId is required" }, { status: 400 });
+    return NextResponse.json({ error: "networkId or serial is required" }, { status: 400 });
   }
 
   try {
@@ -26,21 +49,6 @@ export async function GET(req: NextRequest) {
 
     // Cap at 3 to avoid rate limits
     const limited = appliances.slice(0, 3);
-
-    const timespanSeconds = Number(req.nextUrl.searchParams.get("timespan") ?? "86400");
-    const clampedTimespan = [3600, 21600, 86400, 604800, 2592000].includes(timespanSeconds)
-      ? timespanSeconds
-      : 86400;
-
-    // Coarser resolution for longer spans to stay within Meraki data-point limits
-    const resolution =
-      clampedTimespan <= 3600 ? "60" :
-      clampedTimespan <= 21600 ? "300" :
-      clampedTimespan <= 86400 ? "600" : "3600";
-
-    const now = new Date();
-    const t0 = new Date(now.getTime() - clampedTimespan * 1000).toISOString();
-    const t1 = now.toISOString();
 
     const results = await Promise.all(
       limited.map(async (device): Promise<UplinkDeviceResult> => {

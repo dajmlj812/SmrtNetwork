@@ -173,3 +173,61 @@ export interface VpnStatus {
   merakiVpnPeers?: VpnPeer[];
   thirdPartyVpnPeers?: { name: string; publicIp: string; reachability: string }[];
 }
+
+export interface CellularUplinkStatus {
+  networkId: string;
+  serial: string;
+  model: string;
+  lastReportedAt: string;
+  uplinks: {
+    interface: string;
+    status: "active" | "ready" | "not connected" | string;
+    ip?: string;
+    provider?: string;
+    signalStat?: { rsrp?: string; rsrq?: string };
+    connectionType?: string;
+    apn?: string;
+    signalType?: string;
+  }[];
+}
+
+export interface SensorReading {
+  ts: string;
+  metric: string;
+  temperature?: { celsius: number; fahrenheit: number };
+  humidity?: { relativePercentage: number };
+  door?: { open: boolean };
+  water?: { present: boolean };
+  co2?: { concentration: number };
+  tvoc?: { concentration: number };
+  pm25?: { concentration: number };
+  noise?: { ambient?: { level: number } };
+  battery?: { percentage: number };
+  button?: { pressType: string };
+  [key: string]: unknown;
+}
+
+export interface SensorDevice {
+  serial: string;
+  name: string;
+  model: string;
+  networkId: string;
+  networkName: string;
+  readings: SensorReading[];
+  lastSeen?: string;
+}
+
+export interface CameraSnapshot {
+  expiry: string;
+  url: string;
+}
+
+export interface AlertProfile {
+  id: string;
+  name: string;
+  type: string;
+  enabled: boolean;
+  conditions: Record<string, unknown>[];
+  recipients: { emails: string[]; smsNumbers: string[]; httpServerIds: string[] };
+  networkTags: string[];
+}

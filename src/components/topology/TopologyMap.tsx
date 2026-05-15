@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNetwork } from "@/lib/context/NetworkContext";
-import type { Device } from "@/lib/meraki/types";
+import type { Device, LossAndLatency } from "@/lib/meraki/types";
 
 interface TopoDevice extends Omit<Device, "status"> {
   productType: string;
@@ -29,6 +29,96 @@ const LAYER_LABEL: Record<string, string> = {
   sensor:           "Sensors",
   other:            "Other",
 };
+
+// ---------------------------------------------------------------------------
+// Uplink sparkline for the hover panel
+// ---------------------------------------------------------------------------
+
+function UplinkSparkline({ serial }: { serial: string }) {
+  const { data, isLoading } = useQuery<{ serial: string; history: LossAndLatency[] }[]>({
+    queryKey: ["uplink-history", serial],
+    queryFn: async () => {
+      const res = await fetch(`/api/meraki/uplink?serial=${serial}&timespan=3600`);
+      if (!res.ok) return [];
+      return res.json() as Promise<{ serial: string; history: LossAndLatency[] }[]>;
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  const history = data?.[0]?.history ?? [];
+  const hasData = history.length > 1;
+
+  if (isLoading) {
+    return <div className="h-8 mt-2 rounded bg-white/5 animate-pulse" />;
+  }
+
+  if (!hasData) return null;
+
+  const lossValues = history.map((h) => h.lossPercent ?? 0);
+  const latencyValues = history.map((h) => h.latencyMs ?? 0);
+  const maxLoss = Math.max(...lossValues, 1);
+  const maxLatency = Math.max(...latencyValues, 1);
+  const W = 160;
+  const H = 32;
+  const step = W / (history.length - 1);
+
+  function toPath(values: number[], max: number): string {
+    return values
+      .map((v, i) => {
+        const x = i * step;
+        const y = H - (v / max) * H;
+        return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(" ");
+  }
+
+  const avgLoss = (lossValues.reduce((a, b) => a + b, 0) / lossValues.length).toFixed(1);
+  const avgLatency = (latencyValues.reduce((a, b) => a + b, 0) / latencyValues.length).toFixed(0);
+
+  return (
+    <div className="mt-2 pt-2 border-t border-white/10 space-y-1">
+      <p className="text-[10px] text-white/30 uppercase tracking-wider">WAN1 · 1h</p>
+      <svg width={W} height={H} className="overflow-visible">
+        <path d={toPath(latencyValues, maxLatency)} fill="none" stroke="#3b82f6" strokeWidth={1.2} />
+        <path d={toPath(lossValues, maxLoss)} fill="none" stroke="#ef4444" strokeWidth={1.2} />
+      </svg>
+      <div className="flex gap-3 text-[10px]">
+        <span className="text-blue-400">Latency: {avgLatency}ms</span>
+        <span className="text-red-400">Loss: {avgLoss}%</span>
+      </div>
+    </div>
+  );
+}
+
+function DeviceHoverCard({
+  device,
+}: {
+  device: TopoDevice;
+}) {
+  const isAppliance = device.model.startsWith("MX") || device.model.startsWith("Z");
+  return (
+    <div className="absolute top-3 right-3 rounded-xl border border-white/10 bg-[#131728]/95 backdrop-blur p-3 text-xs space-y-1 min-w-44 pointer-events-none">
+      <p className="font-semibold text-white truncate">
+        {device.name || device.serial}
+      </p>
+      <p className="text-white/50">{device.model}</p>
+      <p className="text-white/35 font-mono">{device.serial}</p>
+      {device.lanIp && (
+        <p className="text-white/40">LAN: {device.lanIp}</p>
+      )}
+      {device.wan1Ip && (
+        <p className="text-white/40">WAN: {device.wan1Ip}</p>
+      )}
+      <p
+        className="capitalize font-medium"
+        style={{ color: STATUS_COLOR[device.status] ?? STATUS_COLOR.unknown }}
+      >
+        {device.status}
+      </p>
+      {isAppliance && <UplinkSparkline serial={device.serial} />}
+    </div>
+  );
+}
 
 const NODE_R = 22;
 const NODE_SPACING_X = 80;
@@ -260,28 +350,8 @@ export function TopologyMap() {
           })}
         </svg>
 
-        {/* Hover tooltip — absolute inside the relative wrapper */}
-        {hoveredDevice && (
-          <div className="absolute top-3 right-3 rounded-xl border border-white/10 bg-[#131728]/95 backdrop-blur p-3 text-xs space-y-1 min-w-44 pointer-events-none">
-            <p className="font-semibold text-white truncate">
-              {hoveredDevice.name || hoveredDevice.serial}
-            </p>
-            <p className="text-white/50">{hoveredDevice.model}</p>
-            <p className="text-white/35 font-mono">{hoveredDevice.serial}</p>
-            {hoveredDevice.lanIp && (
-              <p className="text-white/40">LAN: {hoveredDevice.lanIp}</p>
-            )}
-            {hoveredDevice.wan1Ip && (
-              <p className="text-white/40">WAN: {hoveredDevice.wan1Ip}</p>
-            )}
-            <p
-              className="capitalize font-medium"
-              style={{ color: STATUS_COLOR[hoveredDevice.status] ?? STATUS_COLOR.unknown }}
-            >
-              {hoveredDevice.status}
-            </p>
-          </div>
-        )}
+        {/* Hover panel — absolute inside the relative wrapper */}
+        {hoveredDevice && <DeviceHoverCard device={hoveredDevice} />}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useNetwork } from "@/lib/context/NetworkContext";
 import { cn } from "@/lib/utils";
 import type { MerakiEvent } from "@/lib/meraki/types";
@@ -61,6 +62,7 @@ async function fetchEvents(networkId: string): Promise<MerakiEvent[]> {
 }
 
 export function EventFeed() {
+  const router = useRouter();
   const { selectedNetwork } = useNetwork();
 
   const { data: events, isLoading, isError } = useQuery<MerakiEvent[]>({
@@ -83,6 +85,15 @@ export function EventFeed() {
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
         </span>
+        {selectedNetwork && (
+          <button
+            type="button"
+            onClick={() => router.push("/network")}
+            className="ml-auto text-xs text-white/40 hover:text-blue-400 hover:underline transition-colors"
+          >
+            {selectedNetwork.name}
+          </button>
+        )}
       </div>
 
       {/* Loading state */}

@@ -29,6 +29,9 @@ interface SettingsStatus {
   slackWebhookSet: boolean;
   teamsWebhookSet: boolean;
   reportSchedule: string;
+  healthSummarySchedule: string;
+  healthSummaryTo: string;
+  networkReportRecipients: Record<string, string>;
   activeOrgId: string;
   appPasswordSet: boolean;
   readonlyPasswordSet: boolean;
@@ -244,6 +247,108 @@ function NetworkThresholdsSection({
   );
 }
 
+function NetworkReportRecipientsSection({
+  orgId, currentRecipients, onSaved,
+}: {
+  orgId: string; currentRecipients: Record<string, string>; onSaved: () => void;
+}) {
+  const isAdmin = useIsAdmin();
+  const [networks, setNetworks] = useState<{ id: string; name: string }[] | null>(null);
+  const [recipients, setRecipients] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!orgId) return;
+    fetch(`/api/meraki/networks?orgId=${orgId}`)
+      .then((r) => r.json())
+      .then((nets: { id: string; name: string }[]) => {
+        setNetworks(nets);
+        const init: Record<string, string> = {};
+        for (const net of nets) {
+          if (currentRecipients[net.id]) init[net.id] = currentRecipients[net.id];
+        }
+        setRecipients(init);
+      })
+      .catch(() => setNetworks([]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgId]);
+
+  async function handleSave() {
+    setSaving(true);
+    setSaved(false);
+    try {
+      await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ networkReportRecipients: recipients }),
+      });
+      onSaved();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-white/10 p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">
+            Per-Network Report Recipients
+          </h2>
+          <p className="text-xs text-white/30 mt-0.5">
+            Override the global report recipient for specific networks. Leave blank to use global.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {saved && (
+            <span className="flex items-center gap-1 text-xs text-green-400">
+              <CheckCircle size={12} /> Saved
+            </span>
+          )}
+          <button type="button" onClick={handleSave} disabled={saving || !networks?.length || !isAdmin}
+            className="px-3 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-1.5">
+            {saving && <Loader2 size={12} className="animate-spin" />}
+            Save Recipients
+          </button>
+        </div>
+      </div>
+
+      {networks === null && (
+        <div className="flex items-center gap-2 text-white/40 text-sm">
+          <Loader2 size={14} className="animate-spin" /> Loading networks…
+        </div>
+      )}
+      {networks !== null && networks.length === 0 && (
+        <p className="text-sm text-white/40">No networks found.</p>
+      )}
+      {networks !== null && networks.length > 0 && (
+        <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+          {networks.map((net) => (
+            <div key={net.id} className="flex items-center gap-3">
+              <span className="text-sm text-white/70 w-40 shrink-0 truncate" title={net.name}>{net.name}</span>
+              <input
+                type="email"
+                value={recipients[net.id] ?? ""}
+                onChange={(e) => setRecipients((prev) => ({ ...prev, [net.id]: e.target.value }))}
+                placeholder="network@example.com"
+                disabled={!isAdmin}
+                className={cn(
+                  "flex-1 px-2 py-1 rounded-lg text-sm",
+                  "bg-white/5 border border-white/10",
+                  "placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-[#1e9c4a]"
+                )}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AuditLogSection() {
   const isAdmin = useIsAdmin();
   const [entries, setEntries] = useState<AuditEntry[] | null>(null);
@@ -363,6 +468,9 @@ export default function SettingsPage() {
   const [teamsTestResult, setTeamsTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   const [reportSchedule, setReportSchedule] = useState("none");
+  const [healthSummarySchedule, setHealthSummarySchedule] = useState("none");
+  const [healthSummaryTo, setHealthSummaryTo] = useState("");
+  const [networkReportRecipients, setNetworkReportRecipients] = useState<Record<string, string>>({});
   const [muteUntilInput, setMuteUntilInput] = useState("");
   const [savingMute, setSavingMute] = useState(false);
 
@@ -458,6 +566,9 @@ export default function SettingsPage() {
         setAlertThreshold(String(data.alertThreshold ?? 80));
         setAlertCooldownMinutes(String(data.alertCooldownMinutes ?? 60));
         setReportSchedule(data.reportSchedule ?? "none");
+        setHealthSummarySchedule(data.healthSummarySchedule ?? "none");
+        setHealthSummaryTo(data.healthSummaryTo ?? "");
+        setNetworkReportRecipients(data.networkReportRecipients ?? {});
         setSessionTimeoutDays(String(data.sessionTimeoutDays ?? 7));
         setLdapEnabled(data.ldapEnabled ?? false);
         setLdapUrl(data.ldapUrl ?? "");
@@ -497,7 +608,7 @@ export default function SettingsPage() {
     setSaved(false);
     setSaveError(null);
 
-    const body: Record<string, string | number | boolean> = {};
+    const body: Record<string, string | number | boolean | Record<string, string>> = {};
     if (merakiKey.trim()) body.merakiApiKey = merakiKey.trim();
     if (merakiBaseUrl.trim()) body.merakiBaseUrl = merakiBaseUrl.trim();
     if (anthropicKey.trim()) body.anthropicApiKey = anthropicKey.trim();
@@ -513,6 +624,10 @@ export default function SettingsPage() {
     if (slackWebhookUrl.trim()) body.slackWebhookUrl = slackWebhookUrl.trim();
     if (teamsWebhookUrl.trim()) body.teamsWebhookUrl = teamsWebhookUrl.trim();
     body.reportSchedule = reportSchedule;
+    body.healthSummarySchedule = healthSummarySchedule;
+    if (healthSummaryTo.trim()) body.healthSummaryTo = healthSummaryTo.trim();
+    if (Object.keys(networkReportRecipients).length > 0)
+      body.networkReportRecipients = networkReportRecipients;
     if (sessionTimeoutDays.trim()) body.sessionTimeoutDays = Number(sessionTimeoutDays.trim());
 
     try {
@@ -530,6 +645,9 @@ export default function SettingsPage() {
       setAlertThreshold(String(fresh.alertThreshold ?? 80));
       setAlertCooldownMinutes(String(fresh.alertCooldownMinutes ?? 60));
       setReportSchedule(fresh.reportSchedule ?? "none");
+      setHealthSummarySchedule(fresh.healthSummarySchedule ?? "none");
+      setHealthSummaryTo(fresh.healthSummaryTo ?? "");
+      setNetworkReportRecipients(fresh.networkReportRecipients ?? {});
       setSessionTimeoutDays(String(fresh.sessionTimeoutDays ?? 7));
       setMerakiKey("");
       setAnthropicKey("");
@@ -868,6 +986,8 @@ export default function SettingsPage() {
     (status && alertThreshold !== String(status.alertThreshold ?? 80)) ||
     (status && alertCooldownMinutes !== String(status.alertCooldownMinutes ?? 60)) ||
     (status && reportSchedule !== (status.reportSchedule ?? "none")) ||
+    (status && healthSummarySchedule !== (status.healthSummarySchedule ?? "none")) ||
+    (status && healthSummaryTo !== (status.healthSummaryTo ?? "")) ||
     (status && sessionTimeoutDays !== String(status.sessionTimeoutDays ?? 7));
 
   return (
@@ -998,6 +1118,31 @@ export default function SettingsPage() {
                 <option value="daily">Daily at 7am</option>
                 <option value="weekly">Monday at 7am</option>
               </select>
+            </div>
+            <div className="pt-2 border-t border-white/10 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label htmlFor="healthSummarySchedule" className="text-sm font-medium text-white/80">Org health summary email</label>
+                  <p className="text-xs text-white/40 mt-0.5">Single email summarising all network health scores. Requires SMTP.</p>
+                </div>
+                <select id="healthSummarySchedule" value={healthSummarySchedule} onChange={(e) => setHealthSummarySchedule(e.target.value)}
+                  className={cn("px-3 py-1.5 rounded-lg text-sm", "bg-white/5 border border-white/10",
+                    "focus:outline-none focus:ring-1 focus:ring-blue-500")}>
+                  <option value="none">Off</option>
+                  <option value="daily">Daily at 8am</option>
+                  <option value="weekly">Monday at 8am</option>
+                </select>
+              </div>
+              {healthSummarySchedule !== "none" && (
+                <div className="space-y-1">
+                  <label htmlFor="healthSummaryTo" className="text-xs text-white/50">Override recipient (leave blank to use SMTP &quot;To&quot;)</label>
+                  <input id="healthSummaryTo" type="email" value={healthSummaryTo}
+                    onChange={(e) => setHealthSummaryTo(e.target.value)}
+                    placeholder="ops@example.com"
+                    className={cn("w-full px-3 py-2 rounded-lg text-sm", "bg-white/5 border border-white/10",
+                      "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                </div>
+              )}
             </div>
           </div>
 
@@ -1148,6 +1293,15 @@ export default function SettingsPage() {
             orgId={status.activeOrgId}
             globalThreshold={Number(alertThreshold) || 80}
             currentThresholds={status.networkThresholds ?? {}}
+            onSaved={() => {
+              fetch("/api/settings").then((r) => r.json()).then((d: SettingsStatus) => setStatus(d)).catch(() => {});
+            }}
+          />
+
+          {/* Per-Network Report Recipients */}
+          <NetworkReportRecipientsSection
+            orgId={status.activeOrgId}
+            currentRecipients={status.networkReportRecipients ?? {}}
             onSaved={() => {
               fetch("/api/settings").then((r) => r.json()).then((d: SettingsStatus) => setStatus(d)).catch(() => {});
             }}

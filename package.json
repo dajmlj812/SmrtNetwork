@@ -1,6 +1,6 @@
 {
   "name": "smrt-network",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "build:exe": "next build && node scripts/build-exe.mjs"
+    "build:exe": "next build && node scripts/build-exe.mjs",
+    "build:mac": "next build && node scripts/build-mac.mjs",
+    "build:linux": "next build && node scripts/build-linux.mjs"
   },
   "devDependencies": {
     "caxa": "^3.0.0"

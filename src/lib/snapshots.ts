@@ -18,6 +18,8 @@ export interface NetworkSnapshot {
     dormant: number;
     clientCount: number;
     healthScore: number; // Math.round(online/total*100)
+    sentBytes?: number;
+    recvBytes?: number;
   };
 }
 

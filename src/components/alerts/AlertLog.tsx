@@ -1,10 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { CheckCircle, XCircle, Loader2, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AlertLogEntry } from "@/lib/alert-log";
 import { toCSV, downloadCSV } from "@/lib/csv";
+import { useNetwork } from "@/lib/context/NetworkContext";
 
 const CHANNEL_LABELS: Record<AlertLogEntry["channel"], string> = {
   email: "Email",
@@ -59,6 +61,15 @@ function handleExportAlertLog(data: AlertLogEntry[]) {
 }
 
 export function AlertLog() {
+  const router = useRouter();
+  const { networks, setSelectedNetwork } = useNetwork();
+
+  function handleNetworkClick(networkId: string) {
+    const network = networks.find((n) => n.id === networkId);
+    if (network) setSelectedNetwork(network);
+    router.push("/dashboard");
+  }
+
   const { data, isLoading, isError } = useQuery<AlertLogEntry[]>({
     queryKey: ["alert-log"],
     queryFn: async () => {
@@ -126,8 +137,14 @@ export function AlertLog() {
                   <td className="py-2.5 pr-4 text-white/60 whitespace-nowrap font-mono text-xs">
                     {new Date(entry.timestamp).toLocaleString()}
                   </td>
-                  <td className="py-2.5 pr-4 text-white/80">
-                    {entry.networkName}
+                  <td className="py-2.5 pr-4">
+                    <button
+                      type="button"
+                      onClick={() => handleNetworkClick(entry.networkId)}
+                      className="text-white/80 hover:text-blue-400 hover:underline transition-colors text-left"
+                    >
+                      {entry.networkName}
+                    </button>
                   </td>
                   <td className="py-2.5 pr-4 text-center">
                     <HealthBadge score={entry.healthScore} />

@@ -61,6 +61,11 @@ export interface AppConfig {
   influxDbPassword?: string;
   // Generic health webhook
   healthWebhookUrls?: string;
+  // Org-wide health summary email
+  healthSummarySchedule?: "none" | "daily" | "weekly";
+  healthSummaryTo?: string;
+  // Per-network report recipients (networkId → comma-separated emails)
+  networkReportRecipients?: Record<string, string>;
 }
 
 export function readConfig(): AppConfig {

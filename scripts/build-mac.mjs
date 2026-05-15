@@ -1,0 +1,128 @@
+/**
+ * Packages the Next.js standalone build into a single macOS binary using caxa.
+ * Run after `next build`: node scripts/build-mac.mjs
+ *
+ * Output: dist/SmrtNetwork-mac (~100-150 MB)
+ * - Embeds Node.js runtime (no install needed on target machine)
+ * - Config and data stored in ~/Library/Application Support/SmrtNetwork
+ */
+
+import { execSync } from "child_process";
+import { cpSync, mkdirSync, writeFileSync, copyFileSync, existsSync, statSync, readFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import { execPath } from "process";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const root = join(__dirname, "..");
+const standalone = join(root, ".next", "standalone");
+const dist = join(root, "dist");
+
+const { version } = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+
+if (!existsSync(standalone)) {
+  console.error("ERROR: .next/standalone not found. Run `npm run build` first.");
+  process.exit(1);
+}
+
+console.log("\n📦 Packaging SmrtNetwork for macOS...\n");
+
+// 1. Copy browser-side static chunks
+console.log("  → Copying .next/static assets...");
+cpSync(join(root, ".next", "static"), join(standalone, ".next", "static"), { recursive: true });
+
+// 2. Copy public directory
+if (existsSync(join(root, "public"))) {
+  console.log("  → Copying public assets...");
+  cpSync(join(root, "public"), join(standalone, "public"), { recursive: true });
+}
+
+// 3. Embed Node.js binary
+console.log(`  → Embedding Node.js runtime (${execPath})...`);
+copyFileSync(execPath, join(standalone, "node"));
+
+// 4. Write launcher
+console.log("  → Writing launcher...");
+writeFileSync(
+  join(standalone, "launcher.cjs"),
+  `
+'use strict';
+const path = require('path');
+const os   = require('os');
+const fs   = require('fs');
+const net  = require('net');
+const { exec } = require('child_process');
+
+const dataDir = path.join(os.homedir(), 'Library', 'Application Support', 'SmrtNetwork');
+fs.mkdirSync(dataDir, { recursive: true });
+
+process.env.SMRT_DATA_DIR = dataDir;
+process.env.NODE_ENV      = 'production';
+
+function findFreePort(port) {
+  return new Promise((resolve, reject) => {
+    const srv = net.createServer();
+    srv.listen(port, '127.0.0.1', () => srv.close(() => resolve(port)));
+    srv.on('error', () => port < 3099 ? resolve(findFreePort(port + 1)) : reject(new Error('No free port 3000-3099')));
+  });
+}
+
+async function main() {
+  const port = await findFreePort(3000);
+  process.env.PORT     = String(port);
+  process.env.HOSTNAME = '127.0.0.1';
+
+  const url = 'http://localhost:' + port;
+
+  console.log('');
+  console.log('  ╔══════════════════════════════════════╗');
+  console.log('  ║       SmrtNetwork v${version.padEnd(18)}║');
+  console.log('  ╚══════════════════════════════════════╝');
+  console.log('');
+  console.log('  URL        : ' + url);
+  console.log('  Config dir : ' + dataDir);
+  console.log('');
+  console.log('  Opening browser in 3 seconds...');
+  console.log('  Press Ctrl+C to stop the server.');
+  console.log('');
+
+  setTimeout(() => exec('open "' + url + '"'), 3000);
+
+  process.chdir(__dirname);
+  require('./server.js');
+}
+
+main().catch(err => { console.error('Fatal:', err.message); process.exit(1); });
+`.trimStart(),
+  "utf8"
+);
+
+// 5. Create dist directory
+mkdirSync(dist, { recursive: true });
+
+// 6. Bundle with caxa
+const output = join(dist, "SmrtNetwork-mac");
+console.log("  → Bundling binary (this takes 1-2 minutes)...\n");
+
+execSync(
+  [
+    "npx caxa",
+    `--input "${standalone}"`,
+    `--output "${output}"`,
+    `--`,
+    `"{{caxa}}/node"`,
+    `"{{caxa}}/launcher.cjs"`,
+  ].join(" "),
+  { stdio: "inherit", cwd: root }
+);
+
+// Make executable
+execSync(`chmod +x "${output}"`, { cwd: root });
+
+const sizeMB = (statSync(output).size / 1024 / 1024).toFixed(0);
+
+console.log(`\n✅  dist/SmrtNetwork-mac   (${sizeMB} MB)`);
+console.log("    Config stored in ~/Library/Application Support/SmrtNetwork/");
+console.log("    Run with: ./dist/SmrtNetwork-mac");
+console.log("");
+console.log("    To run at macOS login: add to System Settings → General → Login Items");

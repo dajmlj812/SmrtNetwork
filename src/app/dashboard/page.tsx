@@ -7,6 +7,7 @@ import { StatCards } from "@/components/dashboard/StatCards";
 import { ReportButton } from "@/components/dashboard/ReportButton";
 import { SnapshotChart } from "@/components/dashboard/SnapshotChart";
 import { ClientTrendChart } from "@/components/dashboard/ClientTrendChart";
+import { BandwidthTrendChart } from "@/components/dashboard/BandwidthTrendChart";
 import { PollerStatus } from "@/components/dashboard/PollerStatus";
 import { EventFeed } from "@/components/dashboard/EventFeed";
 
@@ -21,6 +22,7 @@ export default function DashboardPage() {
       <StatCards />
       <SnapshotChart />
       <ClientTrendChart />
+      <BandwidthTrendChart />
       <EventFeed />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <HealthScoreCard />

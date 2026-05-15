@@ -4,26 +4,9 @@ Features planned for future releases. Priority order within each version is appr
 
 ---
 
-## v0.6.0 — Platform & packaging
+## v0.7.0 — Upcoming
 
-**Packaging**
-- macOS packaging (pkg or similar)
-- Linux packaging (AppImage or similar)
-- Progressive Web App (PWA) manifest for installable browser experience
-
-**Monitoring**
-- Cellular gateway (MG) signal strength and data usage panel
-- MT sensor readings (temperature, humidity, door state)
-- Meraki camera thumbnail previews (MV cameras)
-
-**Alerting & AI**
-- Organization health score summary email (one email covering all networks)
-- Natural language alert creation ("alert me when Office Network goes below 70")
-- Per-user dark mode preference when multiple users share an instance
-
-**UI polish**
-- Keyboard shortcut reference (? key)
-- Clickable network names in event feed and alert log navigate to that network
+*(No confirmed scope yet — backlog items below are candidates)*
 
 ---
 
@@ -31,13 +14,27 @@ Features planned for future releases. Priority order within each version is appr
 
 - Windows code signing (removes SmartScreen prompt; requires ~$300–500/yr cert)
 - SNMP trap receiver for Meraki alerts (not practical in Next.js; would require a separate service)
-- Scheduled per-network reports with different recipients per network
-- Bandwidth trend per network (sent/recv history from snapshots)
-- Per-device uplink history exported to the topology hover panel
 
 ---
 
 ## Shipped
+
+### v0.6.0
+- macOS packaging (`npm run build:mac` → `dist/SmrtNetwork-mac`)
+- Linux packaging (`npm run build:linux` → `dist/SmrtNetwork-linux`)
+- PWA manifest — installable from browser
+- MG cellular gateway panel (`/cellular`) — signal strength, provider, RSRP/RSRQ
+- MT sensor readings panel (`/sensors`) — temperature, humidity, door, CO₂
+- MV camera thumbnail previews (`/cameras`) — live snapshots, video link
+- Org-wide health summary email (daily or weekly, configurable recipient)
+- Natural language alert creation with Claude intent parsing
+- Per-user dark mode preference (cookie-backed, no FOUC)
+- Keyboard shortcut reference (? key)
+- Clickable network names in Alert History and Event Feed
+- Bandwidth trend chart on Dashboard (sent/recv bytes from snapshots)
+- Per-device uplink history sparkline in topology hover panel
+- Per-network report recipients (override SMTP "To" per network)
+- Scheduled per-network reports (uses per-network recipient if set)
 
 ### v0.5.0
 - ServiceNow: auto-creates incident when health alert fires (configurable group/category/CMDB CI)

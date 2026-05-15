@@ -25,6 +25,9 @@ import {
   Cpu,
   LogOut,
   Share2,
+  Signal,
+  Thermometer,
+  Camera,
 } from "lucide-react";
 import { NetworkSelector } from "@/components/layout/NetworkSelector";
 import { OrgSelector } from "@/components/layout/OrgSelector";
@@ -44,6 +47,9 @@ const nav: { href: Route; label: string; icon: React.ElementType }[] = [
   { href: "/switches" as Route, label: "Switches", icon: Layers },
   { href: "/wireless" as Route, label: "Wireless", icon: Wifi },
   { href: "/vpn" as Route, label: "VPN", icon: Shield },
+  { href: "/cellular" as Route, label: "Cellular", icon: Signal },
+  { href: "/sensors" as Route, label: "Sensors", icon: Thermometer },
+  { href: "/cameras" as Route, label: "Cameras", icon: Camera },
   { href: "/alerts", label: "Alerts", icon: Bell },
   { href: "/settings" as Route, label: "Settings", icon: Settings },
 ];

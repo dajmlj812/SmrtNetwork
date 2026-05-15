@@ -300,9 +300,15 @@ async function pollNetworks(): Promise<void> {
       const healthScore = Math.round((online / total) * 100);
 
       let clientCount = 0;
+      let sentBytes = 0;
+      let recvBytes = 0;
       try {
         const clients = await meraki.clients.listByNetwork(network.id, 300);
         clientCount = clients.length;
+        for (const c of clients) {
+          sentBytes += c.usage?.sent ?? 0;
+          recvBytes += c.usage?.recv ?? 0;
+        }
       } catch {
         clientCount = 0;
       }
@@ -312,7 +318,7 @@ async function pollNetworks(): Promise<void> {
       writeSnapshot({
         networkId: network.id,
         networkName: network.name,
-        stats: { total, online, offline, alerting, dormant, clientCount, healthScore },
+        stats: { total, online, offline, alerting, dormant, clientCount, healthScore, sentBytes, recvBytes },
       });
 
       // Write to InfluxDB on every poll (time series)
@@ -346,7 +352,8 @@ async function pollNetworks(): Promise<void> {
 
 async function sendScheduledReport(): Promise<void> {
   const smtp = getSmtpConfig();
-  if (!smtp.host || !smtp.user || !smtp.pass || !smtp.to) {
+  const cfg = readConfig();
+  if (!smtp.host || !smtp.user || !smtp.pass) {
     console.log("[Poller] Scheduled report skipped — SMTP not configured");
     return;
   }
@@ -389,9 +396,13 @@ async function sendScheduledReport(): Promise<void> {
         auth: { user: smtp.user, pass: smtp.pass },
       });
 
+      const networkTo = cfg.networkReportRecipients?.[network.id];
+      const reportTo = networkTo ?? smtp.to;
+      if (!reportTo) continue;
+
       await transporter.sendMail({
         from: smtp.from || smtp.user,
-        to: smtp.to,
+        to: reportTo,
         subject: `SmrtNetwork Report — ${network.name} — ${new Date().toLocaleDateString()}`,
         html: reportHtml,
       }).catch((err: unknown) => {
@@ -402,6 +413,91 @@ async function sendScheduledReport(): Promise<void> {
     console.log("[Poller] Scheduled report sent");
   } catch (err) {
     console.error("[Poller] Scheduled report error:", err instanceof Error ? err.message : err);
+  }
+}
+
+async function sendOrgHealthSummary(): Promise<void> {
+  const cfg = readConfig();
+  const to = cfg.healthSummaryTo ?? cfg.smtpTo;
+  if (!to) {
+    console.log("[Poller] Health summary skipped — no recipient configured");
+    return;
+  }
+
+  const smtp = getSmtpConfig();
+  if (!smtp.host || !smtp.user || !smtp.pass) {
+    console.log("[Poller] Health summary skipped — SMTP not configured");
+    return;
+  }
+
+  try {
+    const [networks, statuses] = await Promise.all([
+      meraki.networks.list(ORG_ID),
+      meraki.devices.getStatuses(ORG_ID),
+    ]);
+
+    const rows = networks.map((n) => {
+      const devices = statuses.filter((d) => d.networkId === n.id);
+      const total = devices.length;
+      if (total === 0) return null;
+      const online = devices.filter((d) => d.status === "online").length;
+      const offline = devices.filter((d) => d.status === "offline").length;
+      const alerting = devices.filter((d) => d.status === "alerting").length;
+      const healthScore = Math.round((online / total) * 100);
+      return { name: n.name, total, online, offline, alerting, healthScore };
+    }).filter(Boolean) as { name: string; total: number; online: number; offline: number; alerting: number; healthScore: number }[];
+
+    const overallScore = rows.length
+      ? Math.round(rows.reduce((a, r) => a + r.healthScore, 0) / rows.length)
+      : 0;
+
+    const rowsHtml = rows
+      .sort((a, b) => a.healthScore - b.healthScore)
+      .map((r) => {
+        const color = r.healthScore >= 90 ? "#22c55e" : r.healthScore >= 70 ? "#eab308" : "#ef4444";
+        return `<tr>
+          <td style="padding:6px 12px 6px 0">${r.name}</td>
+          <td style="padding:6px 12px 6px 0;color:${color};font-weight:bold">${r.healthScore}%</td>
+          <td style="padding:6px 12px 6px 0">${r.online}/${r.total} online</td>
+          <td style="padding:6px 4px;color:#ef4444">${r.offline > 0 ? r.offline + " offline" : ""}</td>
+          <td style="padding:6px 4px;color:#f59e0b">${r.alerting > 0 ? r.alerting + " alerting" : ""}</td>
+        </tr>`;
+      })
+      .join("");
+
+    const html = `
+      <h2 style="color:#30ba67">SmrtNetwork Org Health Summary</h2>
+      <p>Overall org health: <strong style="color:${overallScore >= 90 ? "#22c55e" : overallScore >= 70 ? "#eab308" : "#ef4444"}">${overallScore}%</strong> across ${rows.length} networks</p>
+      <table style="border-collapse:collapse;margin-top:12px">
+        <thead><tr style="color:#888;font-size:12px">
+          <th style="text-align:left;padding-bottom:8px">Network</th>
+          <th style="text-align:left;padding-bottom:8px">Health</th>
+          <th style="text-align:left;padding-bottom:8px">Status</th>
+          <th style="text-align:left;padding-bottom:8px"></th>
+          <th style="text-align:left;padding-bottom:8px"></th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <p style="color:#888;font-size:12px;margin-top:16px">Sent by SmrtNetwork at ${new Date().toLocaleString()}</p>
+    `;
+
+    const transporter = nodemailer.createTransport({
+      host: smtp.host,
+      port: smtp.port,
+      secure: smtp.port === 465,
+      auth: { user: smtp.user, pass: smtp.pass },
+    });
+
+    await transporter.sendMail({
+      from: smtp.from || smtp.user,
+      to,
+      subject: `SmrtNetwork Org Health — ${overallScore}% — ${new Date().toLocaleDateString()}`,
+      html,
+    });
+
+    console.log("[Poller] Org health summary sent");
+  } catch (err) {
+    console.error("[Poller] Org health summary error:", err instanceof Error ? err.message : err);
   }
 }
 
@@ -447,5 +543,14 @@ export function startPoller(): void {
   } else if (schedule === "weekly") {
     scheduleWeekly(1, 7, () => sendScheduledReport().catch(console.error));
     console.log("[Poller] Scheduled report: Monday at 7am");
+  }
+
+  const summarySchedule = readConfig().healthSummarySchedule ?? "none";
+  if (summarySchedule === "daily") {
+    scheduleDaily(8, () => sendOrgHealthSummary().catch(console.error));
+    console.log("[Poller] Org health summary: daily at 8am");
+  } else if (summarySchedule === "weekly") {
+    scheduleWeekly(1, 8, () => sendOrgHealthSummary().catch(console.error));
+    console.log("[Poller] Org health summary: Monday at 8am");
   }
 }
