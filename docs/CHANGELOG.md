@@ -4,6 +4,14 @@ All notable changes to SmrtNetwork are documented here.
 
 ---
 
+## v0.7.1 — 2026-05-16
+
+### Bug fixes
+
+- **Login page now renders without the app shell.** The sidebar, global search, keyboard shortcuts modal, update banner, and network/role/query providers are no longer mounted on `/login` or `/api/auth/*`. Previously the sidebar was always rendered, leaking navigation chrome onto the unauthenticated login screen. Public routes now render full-bleed inside the theme provider only.
+
+---
+
 ## v0.7.0 — 2026-05-15
 
 ### UI redesign

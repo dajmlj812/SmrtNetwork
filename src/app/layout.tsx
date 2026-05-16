@@ -97,21 +97,28 @@ export default async function RootLayout({
     >
       <body>
         <ThemeProvider attribute="class" defaultTheme={defaultTheme} enableSystem={false}>
-          <QueryProvider>
-            <NetworkProvider>
-              <RoleProvider role={role}>
-                <GlobalSearch />
-                <KeyboardShortcutsModal />
-                <div className="flex flex-col h-screen bg-background text-foreground">
-                  <UpdateBanner />
-                  <div className="flex flex-1 overflow-hidden">
-                    <Sidebar />
-                    <main className="flex-1 overflow-auto p-6 pt-12 md:pt-6">{children}</main>
+          {isPublic ? (
+            // Public routes (login, auth endpoints) render full-bleed without the app shell —
+            // no sidebar, no global search, no network context (none of those are usable
+            // until the user is signed in).
+            <div className="min-h-screen bg-background text-foreground">{children}</div>
+          ) : (
+            <QueryProvider>
+              <NetworkProvider>
+                <RoleProvider role={role}>
+                  <GlobalSearch />
+                  <KeyboardShortcutsModal />
+                  <div className="flex flex-col h-screen bg-background text-foreground">
+                    <UpdateBanner />
+                    <div className="flex flex-1 overflow-hidden">
+                      <Sidebar />
+                      <main className="flex-1 overflow-auto p-6 pt-12 md:pt-6">{children}</main>
+                    </div>
                   </div>
-                </div>
-              </RoleProvider>
-            </NetworkProvider>
-          </QueryProvider>
+                </RoleProvider>
+              </NetworkProvider>
+            </QueryProvider>
+          )}
         </ThemeProvider>
       </body>
     </html>

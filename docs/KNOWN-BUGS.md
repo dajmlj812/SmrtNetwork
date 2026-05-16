@@ -34,6 +34,12 @@
 
 ---
 
+## Fixed in v0.7.1
+
+| Bug | Fixed in |
+|---|---|
+| Sidebar / global search / update banner were rendered on the unauthenticated `/login` page | v0.7.1 — login route now renders full-bleed without the app shell |
+
 ## Fixed in v0.7.0
 
 | Bug | Fixed in |
