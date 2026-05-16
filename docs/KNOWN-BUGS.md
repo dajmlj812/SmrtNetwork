@@ -34,6 +34,19 @@
 
 ---
 
+## Fixed in v0.7.0
+
+| Bug | Fixed in |
+|---|---|
+| Light mode invisible — ~660 hardcoded `text-white/X` utilities made text disappear on white backgrounds | v0.7.0 — replaced with semantic tokens; both themes render correctly |
+| Meraki rate-limit storm — every browser tab refetched orgs/networks on mount, hammering `/organizations` until 429s cascaded | v0.7.0 — in-memory TTL cache with inflight coalescing |
+| Requests could hang indefinitely on Meraki 429s (unbounded retry loop) | v0.7.0 — 429 retries capped at 4 attempts; fail loudly within ~20 s |
+| `/switches` page showed a single blocking spinner for 9+ s with no progress | v0.7.0 — NDJSON streaming + live progress bar; rows render as they arrive |
+| Camera snapshots flickered to "No preview" on every refresh because Meraki returns the URL before the JPEG is ready | v0.7.0 — preload-before-swap; previous snapshot stays visible during refresh |
+| `DiagnoseModal` fired `void runDiagnosis()` during render (double-fired in strict mode) | v0.7.0 — moved into `useEffect`, plus Escape/click-outside to close |
+| `NetworkSelector` / `OrgSelector` dropdowns hardcoded `bg-gray-900`, stayed dark in light mode | v0.7.0 — uses `bg-card` token |
+| Body font was `Arial, Helvetica, sans-serif` | v0.7.0 — Inter via `next/font/google` |
+
 ## Fixed in v0.6.0
 
 | Bug | Fixed in |

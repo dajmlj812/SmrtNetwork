@@ -4,7 +4,7 @@ Features planned for future releases. Priority order within each version is appr
 
 ---
 
-## v0.7.0 — Upcoming
+## v0.8.0 — Upcoming
 
 *(No confirmed scope yet — backlog items below are candidates)*
 
@@ -14,10 +14,28 @@ Features planned for future releases. Priority order within each version is appr
 
 - Windows code signing (removes SmartScreen prompt; requires ~$300–500/yr cert)
 - SNMP trap receiver for Meraki alerts (not practical in Next.js; would require a separate service)
+- Stale-while-revalidate for Meraki cache — serve cached data instantly, refresh in background
+- Move cache layer down into the Meraki client itself so the poller and direct callers also benefit (currently route-level only)
+- Inline live camera video (HLS via server-side RTSP transcode) — replaces auto-refreshing snapshots with true live video
+- Cache hit/miss metrics surfaced in Settings → Health for tuning TTLs
 
 ---
 
 ## Shipped
+
+### v0.7.0
+- Semantic token-based theming — light mode now works correctly (replaced ~660 hardcoded white-opacity utilities)
+- Inter + JetBrains Mono via `next/font/google`
+- Dashboard restructured for NOC priority — AI health + alerts on top, single tabbed Trends panel
+- Sidebar grouped into Monitor / Inventory / By product / Tools
+- AI surfaces auto-run with distinctive accent-gradient treatment (HealthScoreCard, AlertsList recommendations)
+- In-memory Meraki cache layer (`src/lib/meraki/cache.ts`) with inflight coalescing and HMR-survival
+  - Routes cached: organizations (10m), networks (5m), devices (60s), device statuses (30s), clients (30s), alerts (2m), events (15s), firmware (2m), overview (30s), cameras (60s), per-camera snapshot (5s)
+- 429 retries bounded to 4 attempts with exponential backoff (fail loudly instead of hanging)
+- `/api/meraki/switches` streams NDJSON; UI renders rows + live progress bar as data arrives
+- Per-camera `/api/meraki/cameras/[serial]/snapshot` endpoint with auto-refresh
+  - Cards refresh on a 20 s staggered interval, paused when tab is hidden
+  - Preload-before-swap eliminates flicker / "No preview" flash
 
 ### v0.6.0
 - macOS packaging (`npm run build:mac` → `dist/SmrtNetwork-mac`)
