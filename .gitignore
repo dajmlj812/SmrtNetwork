@@ -39,3 +39,6 @@ data/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# personal-scope Claude Code settings (per-developer, not for the repo)
+.claude/settings.local.json

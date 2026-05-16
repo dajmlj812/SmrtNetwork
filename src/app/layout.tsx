@@ -22,8 +22,7 @@ import { UpdateBanner } from "@/components/layout/UpdateBanner";
 import { KeyboardShortcutsModal } from "@/components/ui/KeyboardShortcutsModal";
 import { headers, cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createHash } from "crypto";
-import { readConfig } from "@/lib/config";
+import { verifySession } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "SmrtNetwork | BuildITSmrt",
@@ -34,10 +33,6 @@ export const metadata: Metadata = {
     apple: "/favicon.png",
   },
 };
-
-function expectedHash(signingKey: string, suffix: string): string {
-  return createHash("sha256").update(signingKey + suffix).digest("hex");
-}
 
 export default async function RootLayout({
   children,
@@ -51,39 +46,13 @@ export default async function RootLayout({
   let role: Role = "none";
 
   if (!isPublic) {
-    const cfg = readConfig();
-    if (cfg.appPasswordHash) {
-      const session = (await cookies()).get("smrt-session")?.value ?? "";
-      const adminKey = cfg.appPasswordHash;
-
-      if (session.startsWith("admin:")) {
-        const hash = session.slice(6);
-        if (hash === expectedHash(adminKey, "smrt-session-admin-v1")) {
-          role = "admin";
-        } else {
-          redirect("/login");
-        }
-      } else if (session.startsWith("readonly:")) {
-        const hash = session.slice(9);
-        if (hash === expectedHash(adminKey, "smrt-session-readonly-v1")) {
-          role = "readonly";
-        } else {
-          redirect("/login");
-        }
-      } else if (session === "open:admin") {
-        role = "admin";
-      } else {
-        // Backward compat: old session format without role prefix
-        const oldExpected = expectedHash(adminKey, "smrt-session-v1");
-        if (session === oldExpected) {
-          role = "admin";
-        } else {
-          redirect("/login");
-        }
-      }
-    } else {
-      role = "admin"; // No password set
+    const session = (await cookies()).get("smrt-session")?.value;
+    const verified = verifySession(session);
+    if (verified === null) {
+      redirect("/login");
     }
+    // "none" means open mode (no password set) — treat as admin for page rendering.
+    role = verified === "none" ? "admin" : verified;
   }
 
   const themeCookie = (await cookies()).get("smrt-theme")?.value;

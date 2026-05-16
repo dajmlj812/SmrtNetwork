@@ -4,6 +4,25 @@ All notable changes to SmrtNetwork are documented here.
 
 ---
 
+## v0.7.2 — 2026-05-16
+
+### Security fix (CRITICAL)
+
+**Authentication bypass on all `/api/*` routes.** Prior to v0.7.2, the session cookie was only verified inside the root `layout.tsx` server component, which gates page renders but has zero effect on direct HTTP calls to `/api/*`. Any caller with network reachability to the app could read full configuration (masked API keys, SMTP credentials, integration settings, audit log) and enumerate the entire Meraki org (organizations, networks, devices) without any authentication. POST endpoints that mutate config and trigger AI analyses were similarly exposed.
+
+Discovered during external pen-testing of the test deployment.
+
+**Fix:**
+- New shared session helper `src/lib/auth/session.ts` is the single source of truth for verifying the `smrt-session` cookie.
+- `src/proxy.ts` (Next.js middleware) now enforces session verification on every `/api/*` request and returns `401 Unauthorized` for unsigned-in callers.
+- A small allowlist of public endpoints remains accessible without auth — `/api/auth/login`, `/api/auth/logout`, `/api/auth/config` (login page reads it pre-auth), and `/api/poller/status` (container HEALTHCHECK).
+- Middleware runs on the Node.js runtime so it can use Node's `crypto` for hash verification, matching the layout's logic exactly.
+- `layout.tsx` refactored to call the same `verifySession()` helper — page-render and API-gate logic can no longer drift.
+
+**Action required after upgrade:** None — existing session cookies remain valid (the new helper accepts all three formats the login route ever produced, including the legacy pre-role-prefix format).
+
+---
+
 ## v0.7.1 — 2026-05-16
 
 ### Bug fixes

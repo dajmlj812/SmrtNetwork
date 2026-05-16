@@ -34,6 +34,12 @@
 
 ---
 
+## Fixed in v0.7.2
+
+| Bug | Fixed in |
+|---|---|
+| **CRITICAL** — every `/api/*` route was reachable without authentication; cookie verification only ran in `layout.tsx` (page renders), not in middleware. Anyone with network reachability could read settings, audit log, full Meraki device/network inventory, and likely modify config + trigger AI analyses. | v0.7.2 — `proxy.ts` middleware now enforces `verifySession()` on every `/api/*` request except a narrow public allowlist (`/api/auth/{login,logout,config}`, `/api/poller/status`) |
+
 ## Fixed in v0.7.1
 
 | Bug | Fixed in |
