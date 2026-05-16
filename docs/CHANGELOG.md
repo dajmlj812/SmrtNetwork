@@ -4,6 +4,23 @@ All notable changes to SmrtNetwork are documented here.
 
 ---
 
+## Deployment hardening — 2026-05-16
+
+*(No app code change — deployment recipe + docs only. Test deployment cut over to this pattern on 2026-05-16.)*
+
+**Cloudflare Tunnel deployment pattern.** Adds `docker-compose.tunnel.yml` as a sibling to the default compose file. Runs a `cloudflare/cloudflared:latest` container alongside SmrtNetwork on a shared `proxy` Docker network. All public traffic arrives via outbound QUIC connections from cloudflared to Cloudflare's edge — **no inbound ports needed on the server's firewall**, and the origin IP is never exposed.
+
+Eliminates the "Cloudflare bypass via direct origin IP" finding from the external pen-test: even if an attacker discovers the server's IP, there's no path to the app — the host firewall can deny all inbound except SSH.
+
+**Files:**
+- `docker-compose.tunnel.yml` — Cloudflare Tunnel compose recipe with a `smrtnetwork` + `cloudflared` pair, bind-mounted `./data`, shared `proxy` external network, no published ports
+- `.env.example` — documents the new `CLOUDFLARE_TUNNEL_TOKEN` variable
+- `docs/DOCKER.md` — new "Two deployment patterns" comparison + full Cloudflare Tunnel quick-start (token generation, hostname mapping, verification commands, security posture)
+
+The default `docker-compose.yml` (localhost / behind-your-own-proxy use case) is unchanged.
+
+---
+
 ## v0.7.3 — 2026-05-16
 
 ### Security hardening

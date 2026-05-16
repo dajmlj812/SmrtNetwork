@@ -34,6 +34,14 @@
 
 ---
 
+## Fixed in deployment hardening — 2026-05-16
+
+*(No app version bump — deployment recipe + docs only.)*
+
+| Issue | Resolution |
+|---|---|
+| Cloudflare bypass: even with Cloudflare in front, the origin IP (`148.230.84.93`) was directly reachable on port 443 and served the SmrtNetwork app via NPM with the same hostname. An attacker discovering the origin IP could bypass Cloudflare WAF, DDoS protection, and rate-limiting entirely. | Cloudflare Tunnel deployment pattern: outbound-only QUIC tunnel from `cloudflared` to Cloudflare's edge. NPM proxy host for SmrtNetwork removed. Origin IP no longer serves the app on any hostname. New `docker-compose.tunnel.yml` ships this pattern for others. See [`docs/DOCKER.md`](DOCKER.md#quick-start--cloudflare-tunnel-public-internet-zero-inbound-ports). |
+
 ## Fixed in v0.7.3
 
 | Bug | Fixed in |
