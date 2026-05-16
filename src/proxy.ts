@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth/session";
 
-// Next.js middleware runs in the Edge runtime by default, which does not
-// expose Node's `crypto`. verifySession() uses `createHash` from "crypto",
-// so this middleware must run on the Node.js runtime.
-export const runtime = "nodejs";
+// Next.js 16's Proxy (formerly middleware) always runs on the Node.js
+// runtime — no `export const runtime` needed (and specifying one is a
+// build error). Node's `crypto` is therefore available to verifySession().
 
 /**
  * Routes under /api/* that are reachable WITHOUT a valid session cookie.
