@@ -4,6 +4,109 @@ All notable changes to SmrtNetwork are documented here.
 
 ---
 
+## v0.7.0 — 2026-05-15
+
+### UI redesign
+
+**Semantic token-based theming**
+- Light mode is now correct — replaced ~660 hardcoded `text-white/X`, `bg-white/X`, `border-white/X` utilities across 45 files with semantic tokens (`foreground-strong`, `foreground-muted`, `muted`, `faint`, `card`, `card-hover`, `overlay`, `overlay-strong`, `accent`, `info`)
+- Tokens defined twice in `src/app/globals.css`: as CSS custom properties under `:root` (light) / `.dark`, and exposed as Tailwind utilities via a `@theme inline` block (Tailwind v4 native)
+- Primary action buttons migrated from generic `bg-blue-600` to `bg-accent` (brand green); informational accents kept on `info` (blue)
+- Recharts components (`SnapshotChart`, `ClientTrendChart`, `BandwidthTrendChart`) now use CSS variables for axes, grids, and tooltips so they render correctly in both themes
+
+**Typography**
+- Inter (sans) and JetBrains Mono via `next/font/google`, replacing the previous Arial fallback
+- Bound to `--font-sans` / `--font-mono`; page headings standardized on `text-2xl font-bold tracking-tight text-foreground-strong`
+
+**Dashboard restructure**
+- Row 1: AI health card (2/3 wide) + Alerts Summary (1/3) — verdict on top, glanceable
+- Row 2: Stat cards
+- Row 3: Single tabbed Trends panel collapsing the three previous trend charts (Health / Clients / Bandwidth) behind a segmented control
+- Row 4: Live event feed
+- Deleted dead `NetworkInsight` placeholder
+
+**AI surfaces**
+- `HealthScoreCard` auto-runs on network change with skeleton loader, accent-tinted gradient background, sparkle icon, and explicit refresh button
+- Brand-aware styling applied to `DeviceList` AI Diagnose modal and `AlertsList` AI Recommendations panel
+- `DiagnoseModal` render-phase side effect (`void runDiagnosis()` during render) moved into a proper `useEffect` and given Escape-to-close + click-outside-to-close
+
+**Sidebar grouping**
+- 17 flat nav items grouped into 4 sections: Monitor / Inventory / By product / Tools
+- Section labels styled as small uppercase tracking-wider faint headers
+
+**Polish**
+- `MarkdownOutput` fully tokenized (used by all AI surfaces)
+- Login page uses `bg-background` instead of hardcoded hex
+- Data tables (`DeviceList`, `ClientTable`) got bigger status dots with ring-2 for visibility, status-row tinting for alerting/offline rows, right-aligned numeric columns with `tabular-nums`
+- Empty states use centered card layouts with tokens instead of bare faint text
+
+### Meraki API hardening
+
+**In-memory TTL cache** (`src/lib/meraki/cache.ts`)
+- New cache utility with inflight-request coalescing and HMR-survival via `globalThis` anchor
+- Routes covered:
+  - `/api/meraki/organizations` — 10 min
+  - `/api/meraki/networks` — 5 min
+  - `/api/meraki/devices?networkId=` — 60 s
+  - `/api/meraki/devices?orgId=` (statuses) — 30 s
+  - `/api/meraki/clients?networkId=` — 30 s
+  - `/api/meraki/alerts` — 2 min
+  - `/api/meraki/events` — 15 s
+  - `/api/meraki/firmware` — 2 min
+  - `/api/meraki/overview` — 30 s
+  - `/api/meraki/cameras` — 60 s
+  - `/api/meraki/cameras/[serial]/snapshot` — 5 s coalesce
+- Cache hits/misses logged with TTL remainder for observability
+- Eliminated the 429 storm caused by every browser tab refetching org/network/device data on mount
+
+**Bounded 429 retries**
+- `merakiFetch` now caps 429 retries at 4 attempts with exponential backoff (max 8 s per wait), throwing if exhausted
+- Replaces the previous unbounded recursion that could silently hang requests for minutes
+- Each retry logged so rate-limit pressure is visible
+
+### Streaming switches
+
+**NDJSON response**
+- `/api/meraki/switches` now returns a `ReadableStream` of `application/x-ndjson` with typed `SwitchStreamEvent` envelopes (`start`, `switch`, `error`, `done`, `fatal`)
+- Server-side concurrency capped at 4 to stay under Meraki's 10 req/s limit; per-switch timings logged
+- Each switch's `{ ports, statuses }` emitted as soon as both inner calls resolve
+
+**Live UI**
+- `SwitchPortTable` consumes the stream via a custom `useSwitchStream` hook
+- Progress bar ("Loading switches — N of M, X%") ticks up live as data arrives
+- Switch sections render as each switch completes (sorted by name once present)
+- ~9 s for 28 switches with progressive feedback instead of one blocking spinner
+- Soft warning banner if any switches failed (with refresh hint)
+
+### Live camera snapshots
+
+**Per-camera snapshot endpoint**
+- New `/api/meraki/cameras/[serial]/snapshot` returns a single fresh snapshot URL with 5 s coalesce cache
+
+**Auto-refreshing cards**
+- Each `CameraCard` polls its own endpoint on a 20 s interval
+- Staggered start (1.5 s × index) so cards don't all hit Meraki at the same instant
+- Polling pauses when the browser tab is hidden (`visibilitychange` listener), resumes on focus
+- Offline cameras don't poll
+- "● Live" pill flashes in the corner while a snapshot is in flight; manual refresh button preserved
+
+**Preload-before-swap (no flicker)**
+- Meraki returns snapshot URLs immediately but the JPEG takes a few seconds to become available — previously this caused `<img>` 404s, `onError` flicker, and "No preview" flashes between every interval
+- New `preloadImage(url)` helper preloads the image off-screen with up to 4 retries × 1.5 s delays
+- Visible `<img>` is only swapped once the new image actually loads
+- Previous snapshot stays on screen throughout — no flash, no "No preview" flicker
+- Initial mount also goes through preload; shows "Loading snapshot…" spinner until the JPEG resolves
+- "No preview available" now only appears for cameras that genuinely never produced a working snapshot
+
+### Bug fixes
+
+- `DiagnoseModal`: moved auto-run side effect from render phase to `useEffect` (was firing twice in strict mode)
+- `AlertLog`: fixed `border border-b border` artifact from mechanical token migration
+- `NetworkSelector` / `OrgSelector` dropdowns no longer hardcode `bg-gray-900` — now use `bg-card` so they render correctly in light mode
+- `KeyboardShortcutsModal` and `ClientDetailPanel` migrated to tokens
+
+---
+
 ## v0.6.0 — 2026-05-15
 
 ### New features
