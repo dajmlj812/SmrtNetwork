@@ -43,8 +43,10 @@ EXPOSE 3000
 # Persisted: config + snapshots + alert log + audit log + report history + tags
 VOLUME ["/data"]
 
-# Health check hits the cheap poller-status endpoint (no Meraki call, no auth)
+# Health check hits the cheap poller-status endpoint (no Meraki call, no auth).
+# Use 127.0.0.1 explicitly — busybox wget on Alpine doesn't fall back from IPv6
+# (::1) to IPv4 (127.0.0.1) when resolving "localhost".
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD wget -q --spider http://localhost:3000/api/poller/status || exit 1
+  CMD wget -q --spider http://127.0.0.1:3000/api/poller/status || exit 1
 
 CMD ["node", "server.js"]
