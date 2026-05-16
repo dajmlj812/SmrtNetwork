@@ -61,47 +61,46 @@ export function SnapshotChart() {
     })) ?? [];
 
   return (
-    <div className="rounded-xl border border-white/10 p-5 space-y-3">
-      <h2 className="text-sm font-semibold text-white/70">
-        Health Trend (last 30 snapshots)
-      </h2>
+    <div className="space-y-3">
+      <p className="text-xs text-muted">Health score · last 30 snapshots</p>
 
       {isLoading && (
-        <div className="h-[120px] flex items-center justify-center">
-          <div className="h-4 w-32 bg-white/10 rounded animate-pulse" />
+        <div className="h-[160px] flex items-center justify-center">
+          <div className="h-4 w-32 bg-overlay-strong rounded animate-pulse" />
         </div>
       )}
 
       {!isLoading && chartData.length === 0 && (
-        <p className="text-sm text-white/40 py-8 text-center">
+        <p className="text-sm text-muted py-8 text-center">
           No snapshot history yet — stats auto-capture every minute.
         </p>
       )}
 
       {!isLoading && chartData.length > 0 && (
-        <ResponsiveContainer width="100%" height={120}>
+        <ResponsiveContainer width="100%" height={160}>
           <LineChart data={chartData} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
             <XAxis
               dataKey="time"
-              tick={{ fontSize: 10, fill: "rgba(255,255,255,0.3)" }}
+              tick={{ fontSize: 10, fill: "var(--faint)" }}
               tickLine={false}
               axisLine={false}
               interval="preserveStartEnd"
             />
             <YAxis
               domain={[0, 100]}
-              tick={{ fontSize: 10, fill: "rgba(255,255,255,0.3)" }}
+              tick={{ fontSize: 10, fill: "var(--faint)" }}
               tickLine={false}
               axisLine={false}
             />
             <Tooltip
               contentStyle={{
-                background: "rgba(15,15,20,0.9)",
-                border: "1px solid rgba(255,255,255,0.1)",
+                background: "var(--tooltip-bg)",
+                border: "1px solid var(--border)",
                 borderRadius: 8,
                 fontSize: 12,
+                color: "var(--tooltip-fg)",
               }}
-              labelStyle={{ color: "rgba(255,255,255,0.5)", marginBottom: 4 }}
+              labelStyle={{ color: "var(--muted)", marginBottom: 4 }}
               itemStyle={{ color: lineColor }}
               formatter={(value) => [`${value}%`, "Health Score"]}
             />

@@ -27,18 +27,18 @@ export function TopTalkers() {
   }
 
   return (
-    <div className="rounded-xl border border-white/10 p-5 space-y-3">
+    <div className="rounded-xl border p-5 space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-semibold">Traffic Analysis</h2>
           {selectedNetwork && (
-            <p className="text-xs text-white/40 mt-0.5">{selectedNetwork.name}</p>
+            <p className="text-xs text-muted mt-0.5">{selectedNetwork.name}</p>
           )}
         </div>
         <button
           onClick={analyze}
           disabled={loading || !selectedNetwork}
-          className="text-xs px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 transition-colors"
+          className="text-xs px-3 py-1 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 transition-colors"
           title={!selectedNetwork ? "Select a network first" : undefined}
         >
           {loading ? "Analyzing…" : "AI Traffic Analysis"}
@@ -47,7 +47,7 @@ export function TopTalkers() {
       {analysis ? (
         <MarkdownOutput content={analysis} />
       ) : (
-        <p className="text-sm text-white/40">
+        <p className="text-sm text-muted">
           {selectedNetwork
             ? 'Click "AI Traffic Analysis" to identify top talkers and anomalies.'
             : "Select a network from the sidebar to get started."}

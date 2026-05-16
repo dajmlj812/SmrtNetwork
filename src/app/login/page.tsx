@@ -47,7 +47,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0d1020] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-3">
           <div className="flex justify-center">
@@ -60,19 +60,19 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">SmrtNetwork</h1>
-            <p className="text-xs text-white/30 mt-0.5">BuildITSmrt, LLC.</p>
+            <h1 className="text-2xl font-bold text-foreground-strong">SmrtNetwork</h1>
+            <p className="text-xs text-muted mt-0.5">BuildITSmrt, LLC.</p>
           </div>
-          <p className="text-sm text-white/40">
+          <p className="text-sm text-foreground-muted">
             {ldapEnabled ? "Sign in with your directory account" : "Enter password to continue"}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
+          <div className="rounded-xl border bg-card p-5 space-y-4">
             {ldapEnabled && (
               <div className="space-y-1.5">
-                <label htmlFor="username" className="text-sm font-medium text-white/70 block">
+                <label htmlFor="username" className="text-sm font-medium text-foreground block">
                   Username
                 </label>
                 <input
@@ -85,16 +85,16 @@ export default function LoginPage() {
                   autoComplete="username"
                   className={cn(
                     "w-full px-3 py-2 rounded-lg text-sm",
-                    "bg-white/5 border border-white/10",
-                    "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-[#1e9c4a]",
-                    "text-white"
+                    "bg-overlay border",
+                    "placeholder:text-faint focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent",
+                    "text-foreground-strong"
                   )}
                 />
               </div>
             )}
 
             <div className="space-y-1.5">
-              <label htmlFor="password" className="text-sm font-medium text-white/70 block">
+              <label htmlFor="password" className="text-sm font-medium text-foreground block">
                 Password
               </label>
               <input
@@ -107,19 +107,19 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 className={cn(
                   "w-full px-3 py-2 rounded-lg text-sm",
-                  "bg-white/5 border border-white/10",
-                  "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-[#1e9c4a]",
-                  "text-white"
+                  "bg-overlay border",
+                  "placeholder:text-faint focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent",
+                  "text-foreground-strong"
                 )}
               />
             </div>
 
-            {error && <p className="text-sm text-red-400">{error}</p>}
+            {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
 
             <button
               type="submit"
               disabled={loading || !password}
-              className="w-full px-4 py-2 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
+              className="w-full px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover disabled:opacity-40 text-sm font-medium text-accent-fg transition-colors flex items-center justify-center gap-2"
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
               {loading ? "Signing in…" : "Sign In"}
@@ -127,7 +127,7 @@ export default function LoginPage() {
           </div>
 
           {ldapEnabled && (
-            <p className="text-center text-xs text-white/20">
+            <p className="text-center text-xs text-faint">
               Leave username blank to use PIN authentication
             </p>
           )}

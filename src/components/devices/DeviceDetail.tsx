@@ -83,8 +83,8 @@ export function DeviceDetail({ query }: Props) {
 
   if (!selectedNetwork) {
     return (
-      <div className="rounded-xl border border-white/10 p-5">
-        <p className="text-sm text-white/40">
+      <div className="rounded-xl border p-5">
+        <p className="text-sm text-muted">
           Select a network from the sidebar before searching.
         </p>
       </div>
@@ -93,7 +93,7 @@ export function DeviceDetail({ query }: Props) {
 
   if (fetching) {
     return (
-      <div className="rounded-xl border border-white/10 p-5 flex items-center gap-2 text-white/50">
+      <div className="rounded-xl border p-5 flex items-center gap-2 text-muted">
         <Loader2 size={16} className="animate-spin" />
         <span className="text-sm">Searching for &quot;{query}&quot;…</span>
       </div>
@@ -106,7 +106,7 @@ export function DeviceDetail({ query }: Props) {
         <AlertTriangle size={16} className="text-red-400 mt-0.5 shrink-0" />
         <div>
           <p className="text-sm font-medium text-red-400">Search failed</p>
-          <p className="text-xs text-white/50 mt-0.5">{fetchError}</p>
+          <p className="text-xs text-muted mt-0.5">{fetchError}</p>
         </div>
       </div>
     );
@@ -114,9 +114,9 @@ export function DeviceDetail({ query }: Props) {
 
   if (result && !result.client && !result.device) {
     return (
-      <div className="rounded-xl border border-white/10 p-5">
-        <p className="text-sm text-white/50">
-          No client or device found matching <span className="font-mono text-white/70">{query}</span> in the last 24 hours.
+      <div className="rounded-xl border p-5">
+        <p className="text-sm text-muted">
+          No client or device found matching <span className="font-mono text-foreground-muted">{query}</span> in the last 24 hours.
         </p>
       </div>
     );
@@ -126,7 +126,7 @@ export function DeviceDetail({ query }: Props) {
     <div className="space-y-4">
       {/* Client Card */}
       {result?.client && (
-        <div className="rounded-xl border border-white/10 p-5 space-y-3">
+        <div className="rounded-xl border p-5 space-y-3">
           <div className="flex items-center gap-2">
             <Wifi size={16} className="text-blue-400" />
             <h2 className="font-semibold text-sm">Client</h2>
@@ -163,7 +163,7 @@ export function DeviceDetail({ query }: Props) {
 
       {/* Device Card */}
       {result?.device && (
-        <div className="rounded-xl border border-white/10 p-5 space-y-3">
+        <div className="rounded-xl border p-5 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Server size={16} className="text-purple-400" />
@@ -171,7 +171,7 @@ export function DeviceDetail({ query }: Props) {
             </div>
             <div className="flex items-center gap-2">
               {result.device.status && (
-                <span className="flex items-center gap-1.5 text-xs text-white/60">
+                <span className="flex items-center gap-1.5 text-xs text-foreground-muted">
                   <span
                     className={cn(
                       "w-2 h-2 rounded-full",
@@ -184,7 +184,7 @@ export function DeviceDetail({ query }: Props) {
               <button
                 onClick={() => diagnose(result.device!.serial)}
                 disabled={diagnosing}
-                className="text-xs px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-colors"
+                className="text-xs px-3 py-1 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-50 transition-colors"
               >
                 {diagnosing ? (
                   <span className="flex items-center gap-1">
@@ -220,7 +220,7 @@ export function DeviceDetail({ query }: Props) {
           )}
 
           {analysis && (
-            <div className="mt-2 border-t border-white/10 pt-3">
+            <div className="mt-2 border-t pt-3">
               <MarkdownOutput content={analysis} />
             </div>
           )}
@@ -241,8 +241,8 @@ function InfoRow({
 }) {
   return (
     <div>
-      <span className="text-xs text-white/40">{label}</span>
-      <p className={cn("text-sm text-white/80 mt-0.5", mono && "font-mono text-xs")}>
+      <span className="text-xs text-muted">{label}</span>
+      <p className={cn("text-sm text-foreground mt-0.5", mono && "font-mono text-xs")}>
         {value}
       </p>
     </div>

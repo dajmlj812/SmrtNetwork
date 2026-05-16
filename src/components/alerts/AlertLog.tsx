@@ -82,16 +82,16 @@ export function AlertLog() {
   });
 
   return (
-    <div className="rounded-xl border border-white/10 p-5 space-y-4">
+    <div className="rounded-xl border p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">
+        <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider">
           Alert History
         </h2>
         {data && data.length > 0 && (
           <button
             type="button"
             onClick={() => handleExportAlertLog(data)}
-            className="flex items-center gap-1 text-xs text-white/40 hover:text-white/70 transition-colors"
+            className="flex items-center gap-1 text-xs text-muted hover:text-foreground-muted transition-colors"
             title="Export alert log as CSV"
           >
             <Download size={13} />
@@ -101,7 +101,7 @@ export function AlertLog() {
       </div>
 
       {isLoading && (
-        <div className="flex items-center gap-2 text-white/50">
+        <div className="flex items-center gap-2 text-muted">
           <Loader2 size={15} className="animate-spin" />
           <span className="text-sm">Loading…</span>
         </div>
@@ -112,14 +112,14 @@ export function AlertLog() {
       )}
 
       {!isLoading && !isError && data?.length === 0 && (
-        <p className="text-sm text-white/40">No alerts have fired yet.</p>
+        <p className="text-sm text-muted">No alerts have fired yet.</p>
       )}
 
       {!isLoading && !isError && data && data.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10 text-xs text-white/40 uppercase tracking-wider">
+              <tr className="border-b text-xs text-muted uppercase tracking-wider">
                 <th className="pb-2 text-left font-medium pr-4">Time</th>
                 <th className="pb-2 text-left font-medium pr-4">Network</th>
                 <th className="pb-2 text-center font-medium pr-4">Score</th>
@@ -132,16 +132,16 @@ export function AlertLog() {
               {data.map((entry) => (
                 <tr
                   key={entry.id}
-                  className="border-b border-white/5 last:border-0 hover:bg-white/2"
+                  className="border-b last:border-0 hover:bg-overlay"
                 >
-                  <td className="py-2.5 pr-4 text-white/60 whitespace-nowrap font-mono text-xs">
+                  <td className="py-2.5 pr-4 text-foreground-muted whitespace-nowrap font-mono text-xs">
                     {new Date(entry.timestamp).toLocaleString()}
                   </td>
                   <td className="py-2.5 pr-4">
                     <button
                       type="button"
                       onClick={() => handleNetworkClick(entry.networkId)}
-                      className="text-white/80 hover:text-blue-400 hover:underline transition-colors text-left"
+                      className="text-foreground hover:text-blue-400 hover:underline transition-colors text-left"
                     >
                       {entry.networkName}
                     </button>
@@ -149,7 +149,7 @@ export function AlertLog() {
                   <td className="py-2.5 pr-4 text-center">
                     <HealthBadge score={entry.healthScore} />
                   </td>
-                  <td className="py-2.5 pr-4 text-center text-white/50 font-mono">
+                  <td className="py-2.5 pr-4 text-center text-muted font-mono">
                     {entry.threshold}%
                   </td>
                   <td className="py-2.5 pr-4 text-center">

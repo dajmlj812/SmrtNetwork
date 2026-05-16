@@ -29,7 +29,7 @@ function SignalBar({ pct }: { pct: number }) {
           key={i}
           className={cn(
             "w-1.5 rounded-sm",
-            pct >= threshold ? "bg-green-400" : "bg-white/15"
+            pct >= threshold ? "bg-green-400" : "bg-overlay-strong"
           )}
           style={{ height: `${25 + i * 18}%` }}
         />
@@ -61,11 +61,11 @@ export default function CellularPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Signal size={20} className="text-green-400" />
-        <h1 className="text-2xl font-bold">Cellular Gateways</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground-strong">Cellular Gateways</h1>
       </div>
 
       {isLoading && (
-        <div className="flex items-center gap-2 text-white/50 py-8">
+        <div className="flex items-center gap-2 text-muted py-8">
           <Loader2 size={16} className="animate-spin" />
           <span className="text-sm">Loading cellular status…</span>
         </div>
@@ -76,7 +76,7 @@ export default function CellularPage() {
       )}
 
       {!isLoading && !isError && (!filtered || filtered.length === 0) && (
-        <div className="rounded-xl border border-white/10 p-8 text-center text-white/40 text-sm">
+        <div className="rounded-xl border p-8 text-center text-muted text-sm">
           No cellular gateways found{selectedNetwork ? ` in ${selectedNetwork.name}` : ""}.
         </div>
       )}
@@ -86,14 +86,14 @@ export default function CellularPage() {
           {filtered.map((device) => (
             <div
               key={device.serial}
-              className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3"
+              className="rounded-xl border bg-overlay p-4 space-y-3"
             >
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-semibold text-sm">{device.model}</p>
-                  <p className="text-xs text-white/40 font-mono">{device.serial}</p>
+                  <p className="text-xs text-muted font-mono">{device.serial}</p>
                 </div>
-                <span className="text-xs text-white/30">
+                <span className="text-xs text-faint">
                   {new Date(device.lastReportedAt).toLocaleTimeString()}
                 </span>
               </div>
@@ -106,15 +106,15 @@ export default function CellularPage() {
                   const statusKey = uplink.status.toLowerCase();
 
                   return (
-                    <div key={i} className="rounded-lg bg-white/5 p-3 space-y-2">
+                    <div key={i} className="rounded-lg bg-overlay p-3 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-white/70 uppercase">
+                        <span className="text-xs font-medium text-foreground-muted uppercase">
                           {uplink.interface}
                         </span>
                         <span
                           className={cn(
                             "text-xs font-medium capitalize",
-                            STATUS_COLOR[statusKey] ?? "text-white/50"
+                            STATUS_COLOR[statusKey] ?? "text-muted"
                           )}
                         >
                           {uplink.status}
@@ -122,21 +122,21 @@ export default function CellularPage() {
                       </div>
 
                       {uplink.provider && (
-                        <p className="text-xs text-white/50">{uplink.provider}</p>
+                        <p className="text-xs text-muted">{uplink.provider}</p>
                       )}
 
                       {uplink.ip && (
-                        <p className="text-xs text-white/40 font-mono">{uplink.ip}</p>
+                        <p className="text-xs text-muted font-mono">{uplink.ip}</p>
                       )}
 
                       {uplink.connectionType && (
-                        <p className="text-xs text-white/40">{uplink.connectionType}{uplink.signalType ? ` · ${uplink.signalType}` : ""}</p>
+                        <p className="text-xs text-muted">{uplink.connectionType}{uplink.signalType ? ` · ${uplink.signalType}` : ""}</p>
                       )}
 
                       {(rsrp || rsrq) && (
                         <div className="flex items-center gap-3">
                           <SignalBar pct={pct} />
-                          <div className="text-[10px] text-white/40 space-x-2">
+                          <div className="text-[10px] text-muted space-x-2">
                             {rsrp && <span>RSRP {rsrp}</span>}
                             {rsrq && <span>RSRQ {rsrq}</span>}
                           </div>

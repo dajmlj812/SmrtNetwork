@@ -104,7 +104,7 @@ export function ChatPanel() {
 
   if (!selectedNetwork) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-white/40">
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted">
         <p className="text-sm">Select a network to start chatting</p>
       </div>
     );
@@ -115,7 +115,7 @@ export function ChatPanel() {
       {/* Message list */}
       <div className="flex-1 overflow-y-auto space-y-4 pb-4">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-32 gap-2 text-white/30 text-sm">
+          <div className="flex flex-col items-center justify-center h-32 gap-2 text-muted text-sm">
             <p>Ask anything about your network</p>
           </div>
         )}
@@ -132,16 +132,16 @@ export function ChatPanel() {
               className={cn(
                 "max-w-[85%] rounded-xl px-4 py-3",
                 msg.role === "user"
-                  ? "bg-blue-600/20 border border-blue-500/30 text-sm text-white/90"
-                  : "bg-white/5 border border-white/10"
+                  ? "bg-accent-soft border border-accent/30 text-sm"
+                  : "bg-card border"
               )}
             >
               {msg.role === "user" ? (
-                <p className="text-sm text-white/90">{msg.content}</p>
+                <p className="text-sm text-foreground-strong">{msg.content}</p>
               ) : msg.content ? (
                 <MarkdownOutput content={msg.content} />
               ) : (
-                <div className="flex items-center gap-2 text-white/40">
+                <div className="flex items-center gap-2 text-muted">
                   <Loader2 size={14} className="animate-spin" />
                   <span className="text-xs">Thinking…</span>
                 </div>
@@ -160,7 +160,7 @@ export function ChatPanel() {
               key={s}
               onClick={() => void send(s)}
               disabled={isStreaming}
-              className="text-xs px-3 py-1.5 rounded-full border border-white/10 text-white/60 hover:text-white hover:border-white/30 transition-colors disabled:opacity-40"
+              className="text-xs px-3 py-1.5 rounded-full border bg-card text-foreground-muted hover:text-foreground-strong hover:border-strong transition-colors disabled:opacity-40"
             >
               {s}
             </button>
@@ -169,7 +169,7 @@ export function ChatPanel() {
       )}
 
       {/* Input */}
-      <div className="flex gap-2 items-end border border-white/10 rounded-xl p-3 bg-white/[0.02]">
+      <div className="flex gap-2 items-end border rounded-xl p-3 bg-card focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30 transition-colors">
         <textarea
           ref={textareaRef}
           value={input}
@@ -178,17 +178,17 @@ export function ChatPanel() {
           placeholder="Ask about your network… (Enter to send, Shift+Enter for newline)"
           disabled={isStreaming}
           rows={1}
-          className="flex-1 bg-transparent text-sm text-white/90 placeholder-white/30 resize-none outline-none leading-relaxed max-h-32"
+          className="flex-1 bg-transparent text-sm text-foreground-strong placeholder:text-faint resize-none outline-none leading-relaxed max-h-32"
         />
         <button
           onClick={() => void send(input)}
           disabled={isStreaming || !input.trim()}
-          className="p-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 transition-colors shrink-0"
+          className="p-2 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 transition-colors shrink-0"
         >
           {isStreaming ? (
-            <Loader2 size={16} className="animate-spin text-white" />
+            <Loader2 size={16} className="animate-spin" />
           ) : (
-            <Send size={16} className="text-white" />
+            <Send size={16} />
           )}
         </button>
       </div>

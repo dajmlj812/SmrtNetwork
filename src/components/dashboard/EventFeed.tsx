@@ -6,10 +6,6 @@ import { useNetwork } from "@/lib/context/NetworkContext";
 import { cn } from "@/lib/utils";
 import type { MerakiEvent } from "@/lib/meraki/types";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function relativeTime(isoString: string): string {
   const diffMs = Date.now() - new Date(isoString).getTime();
   const seconds = Math.floor(diffMs / 1000);
@@ -25,35 +21,31 @@ function getBadgeClass(event: MerakiEvent): string {
   const d = event.description.toLowerCase();
 
   if (t.includes("association") || t.includes("disassociation")) {
-    return "bg-blue-500/20 text-blue-300";
+    return "bg-info-soft text-info";
   }
   if (t.includes("auth") || t.includes("deauth")) {
     return d.includes("failure") || d.includes("fail")
-      ? "bg-red-500/20 text-red-300"
-      : "bg-green-500/20 text-green-300";
+      ? "bg-red-500/15 text-red-500 dark:text-red-300"
+      : "bg-accent-soft text-accent";
   }
   if (t.includes("reboot") || t.includes("started") || t.includes("restart")) {
-    return "bg-orange-500/20 text-orange-300";
+    return "bg-orange-500/15 text-orange-500 dark:text-orange-300";
   }
   if (t.includes("config") || t.includes("settings") || t.includes("change")) {
-    return "bg-yellow-500/20 text-yellow-300";
+    return "bg-yellow-500/15 text-yellow-600 dark:text-yellow-300";
   }
-  return "bg-white/10 text-white/50";
+  return "bg-overlay-strong text-muted";
 }
 
 function EventSkeleton() {
   return (
-    <div className="flex items-start gap-3 py-2.5 border-b border-white/5 last:border-0 animate-pulse">
-      <div className="h-4 w-12 rounded-full bg-white/10 shrink-0 mt-0.5" />
-      <div className="h-4 w-16 rounded-full bg-white/10 shrink-0" />
-      <div className="h-4 flex-1 rounded bg-white/5" />
+    <div className="flex items-start gap-3 py-2.5 border-b last:border-0 animate-pulse">
+      <div className="h-4 w-12 rounded-full bg-overlay-strong shrink-0 mt-0.5" />
+      <div className="h-4 w-16 rounded-full bg-overlay-strong shrink-0" />
+      <div className="h-4 flex-1 rounded bg-overlay" />
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// EventFeed
-// ---------------------------------------------------------------------------
 
 async function fetchEvents(networkId: string): Promise<MerakiEvent[]> {
   const res = await fetch(`/api/meraki/events?networkId=${networkId}&perPage=25`);
@@ -76,27 +68,24 @@ export function EventFeed() {
   if (!selectedNetwork || isError) return null;
 
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
-      {/* Header */}
+    <div className="rounded-xl border bg-card p-5">
       <div className="flex items-center gap-2 mb-4">
-        <h2 className="text-sm font-semibold">Recent Events</h2>
-        {/* Pulsing live dot */}
+        <h2 className="text-sm font-semibold text-foreground-strong">Recent Events</h2>
         <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
         </span>
         {selectedNetwork && (
           <button
             type="button"
             onClick={() => router.push("/network")}
-            className="ml-auto text-xs text-white/40 hover:text-blue-400 hover:underline transition-colors"
+            className="ml-auto text-xs text-muted hover:text-accent hover:underline transition-colors"
           >
             {selectedNetwork.name}
           </button>
         )}
       </div>
 
-      {/* Loading state */}
       {isLoading && (
         <div>
           {Array.from({ length: 6 }).map((_, i) => (
@@ -105,25 +94,21 @@ export function EventFeed() {
         </div>
       )}
 
-      {/* Empty state */}
       {!isLoading && !isError && events?.length === 0 && (
-        <p className="text-sm text-white/40">No recent events</p>
+        <p className="text-sm text-muted">No recent events</p>
       )}
 
-      {/* Event list */}
       {!isLoading && !isError && events && events.length > 0 && (
         <div className="max-h-[300px] overflow-y-auto space-y-0 -mx-1 px-1">
           {events.map((event, i) => (
             <div
               key={`${event.occurredAt}-${i}`}
-              className="flex items-start gap-3 py-2.5 border-b border-white/5 last:border-0"
+              className="flex items-start gap-3 py-2.5 border-b last:border-0"
             >
-              {/* Relative time */}
-              <span className="text-xs text-white/30 shrink-0 pt-0.5 w-14 text-right leading-none">
+              <span className="text-xs text-faint shrink-0 pt-0.5 w-14 text-right leading-none font-mono">
                 {relativeTime(event.occurredAt)}
               </span>
 
-              {/* Type badge */}
               <span
                 className={cn(
                   "text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 leading-none whitespace-nowrap",
@@ -133,14 +118,13 @@ export function EventFeed() {
                 {event.type.replace(/_/g, " ")}
               </span>
 
-              {/* Description */}
-              <p className="text-xs text-white/60 leading-snug min-w-0">
+              <p className="text-xs text-foreground-muted leading-snug min-w-0">
                 {event.description}
                 {event.deviceName && (
-                  <span className="text-white/40"> — {event.deviceName}</span>
+                  <span className="text-muted"> — {event.deviceName}</span>
                 )}
                 {event.clientDescription && (
-                  <span className="text-white/40"> · {event.clientDescription}</span>
+                  <span className="text-muted"> · {event.clientDescription}</span>
                 )}
               </p>
             </div>

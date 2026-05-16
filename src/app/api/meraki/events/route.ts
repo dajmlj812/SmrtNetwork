@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { meraki } from "@/lib/meraki/client";
+import { cached } from "@/lib/meraki/cache";
+
+// Events are "live" but the UI polls every 30s anyway — 15s TTL just dedupes
+// duplicate concurrent requests (multiple tabs / strict mode double-mount).
+const TTL_MS = 15 * 1000;
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -11,7 +16,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const events = await meraki.events.list(networkId, perPage);
+    const events = await cached(
+      `meraki:events:${networkId}:${perPage}`,
+      TTL_MS,
+      () => meraki.events.list(networkId, perPage)
+    );
     return NextResponse.json(events);
   } catch (err) {
     const message = err instanceof Error ? err.message : "";

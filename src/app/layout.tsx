@@ -1,6 +1,18 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { NetworkProvider } from "@/lib/context/NetworkContext";
 import { RoleProvider, type Role } from "@/lib/context/RoleContext";
@@ -78,7 +90,11 @@ export default async function RootLayout({
   const defaultTheme = themeCookie === "light" || themeCookie === "dark" ? themeCookie : "dark";
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${inter.variable} ${mono.variable}`}
+    >
       <body>
         <ThemeProvider attribute="class" defaultTheme={defaultTheme} enableSystem={false}>
           <QueryProvider>

@@ -77,10 +77,10 @@ export function AlertIntentCreator() {
   }
 
   return (
-    <div className="rounded-xl border border-white/10 p-5 space-y-4">
+    <div className="rounded-xl border p-5 space-y-4">
       <div className="flex items-center gap-2">
         <Sparkles size={15} className="text-purple-400" />
-        <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">
+        <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider">
           Create Alert with AI
         </h2>
       </div>
@@ -92,7 +92,7 @@ export function AlertIntentCreator() {
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") void handleAnalyze(); }}
           placeholder='e.g. "Alert me on Slack when RJW HQ drops below 75%"'
-          className="flex-1 rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+          className="flex-1 rounded-lg bg-overlay border px-3 py-2 text-sm text-foreground-strong placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-purple-500/50"
           disabled={loading}
         />
         <button
@@ -117,7 +117,7 @@ export function AlertIntentCreator() {
       {result && !applied && (
         <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-4 space-y-3">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm text-white/80">{result.description}</p>
+            <p className="text-sm text-foreground">{result.description}</p>
             <span
               className={cn(
                 "text-[10px] px-1.5 py-0.5 rounded-full shrink-0",
@@ -133,12 +133,12 @@ export function AlertIntentCreator() {
           </div>
 
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-            <div className="text-white/40">Network</div>
-            <div className="text-white/70">{result.networkName ?? "All networks"}</div>
-            <div className="text-white/40">Threshold</div>
-            <div className="text-white/70">Below {result.threshold}%</div>
-            <div className="text-white/40">Channels</div>
-            <div className="text-white/70">
+            <div className="text-muted">Network</div>
+            <div className="text-foreground-muted">{result.networkName ?? "All networks"}</div>
+            <div className="text-muted">Threshold</div>
+            <div className="text-foreground-muted">Below {result.threshold}%</div>
+            <div className="text-muted">Channels</div>
+            <div className="text-foreground-muted">
               {result.channels.map((c) => CHANNEL_LABELS[c] ?? c).join(", ")}
             </div>
           </div>
@@ -155,7 +155,7 @@ export function AlertIntentCreator() {
             <button
               type="button"
               onClick={() => { setResult(null); setPrompt(""); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/60 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-muted hover:text-foreground-muted transition-colors"
             >
               <X size={12} />
               Dismiss

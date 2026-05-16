@@ -12,7 +12,7 @@ function SkeletonRow() {
     <tr>
       {Array.from({ length: 3 }).map((_, i) => (
         <td key={i} className="px-4 py-2.5">
-          <div className="h-4 bg-white/10 rounded animate-pulse" />
+          <div className="h-4 bg-overlay-strong rounded animate-pulse" />
         </td>
       ))}
     </tr>
@@ -45,19 +45,19 @@ function ProductTypeSection({
   const hasMultipleVersions = groups.length > 1;
 
   return (
-    <div className="rounded-xl border border-white/10 overflow-hidden">
+    <div className="rounded-xl border overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-5 py-4 border-b border-white/10 hover:bg-white/[0.02] transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 border-b hover:bg-overlay transition-colors"
       >
         <div className="flex items-center gap-3">
           {open ? (
-            <ChevronDown size={14} className="text-white/40" />
+            <ChevronDown size={14} className="text-muted" />
           ) : (
-            <ChevronRight size={14} className="text-white/40" />
+            <ChevronRight size={14} className="text-muted" />
           )}
-          <span className="font-semibold text-sm uppercase tracking-wide text-white/80">
+          <span className="font-semibold text-sm uppercase tracking-wide text-foreground">
             {productType}
           </span>
           {hasMultipleVersions && (
@@ -66,24 +66,24 @@ function ProductTypeSection({
             </span>
           )}
         </div>
-        <span className="text-xs text-white/30">{totalDevices} device{totalDevices !== 1 ? "s" : ""}</span>
+        <span className="text-xs text-faint">{totalDevices} device{totalDevices !== 1 ? "s" : ""}</span>
       </button>
 
       {open && (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5">
-                <th className="px-5 py-2 text-left text-xs text-white/40 font-medium">
+              <tr className="border-b border">
+                <th className="px-5 py-2 text-left text-xs text-muted font-medium">
                   Firmware Version
                 </th>
-                <th className="px-5 py-2 text-left text-xs text-white/40 font-medium">
+                <th className="px-5 py-2 text-left text-xs text-muted font-medium">
                   Device Count
                 </th>
-                <th className="px-5 py-2 text-left text-xs text-white/40 font-medium">
+                <th className="px-5 py-2 text-left text-xs text-muted font-medium">
                   Networks
                 </th>
-                <th className="px-5 py-2 text-left text-xs text-white/40 font-medium">
+                <th className="px-5 py-2 text-left text-xs text-muted font-medium">
                   Status
                 </th>
               </tr>
@@ -94,23 +94,23 @@ function ProductTypeSection({
                 return (
                   <tr
                     key={group.firmware}
-                    className="border-b border-white/5 last:border-0 hover:bg-white/[0.02]"
+                    className="border-b last:border-0 hover:bg-overlay"
                   >
                     <td className="px-5 py-3">
                       <a
                         href={getFirmwareDocsUrl(productType)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 font-mono text-xs text-white/80 hover:text-[#30ba67] transition-colors group"
+                        className="flex items-center gap-1.5 font-mono text-xs text-foreground hover:text-accent transition-colors group"
                       >
                         {group.firmware}
                         <ExternalLink size={11} className="opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
                       </a>
                     </td>
-                    <td className="px-5 py-3 text-white/70">
+                    <td className="px-5 py-3 text-foreground-muted">
                       {group.count}
                     </td>
-                    <td className="px-5 py-3 text-white/50">
+                    <td className="px-5 py-3 text-muted">
                       {group.networks.length}
                     </td>
                     <td className="px-5 py-3">
@@ -120,7 +120,7 @@ function ProductTypeSection({
                             "inline-block px-2 py-0.5 rounded-full text-xs border",
                             hasMultipleVersions
                               ? "bg-green-500/15 text-green-400 border-green-500/30"
-                              : "bg-white/5 text-white/30 border-white/10"
+                              : "bg-overlay text-faint border"
                           )}
                         >
                           {hasMultipleVersions ? "Baseline (most common)" : "Uniform"}
@@ -162,17 +162,17 @@ export function FirmwareAudit() {
 
   if (!orgId) {
     return (
-      <div className="rounded-xl border border-white/10 p-5">
-        <p className="text-sm text-white/40">No organization selected.</p>
+      <div className="rounded-xl border p-5">
+        <p className="text-sm text-muted">No organization selected.</p>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-white/10 overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/10">
-          <div className="h-4 w-32 bg-white/10 rounded animate-pulse" />
+      <div className="rounded-xl border overflow-hidden">
+        <div className="px-5 py-4 border-b border">
+          <div className="h-4 w-32 bg-overlay-strong rounded animate-pulse" />
         </div>
         <table className="w-full text-sm">
           <tbody>
@@ -197,8 +197,8 @@ export function FirmwareAudit() {
 
   if (!data || data.length === 0) {
     return (
-      <div className="rounded-xl border border-white/10 p-5">
-        <p className="text-sm text-white/40">No device data available.</p>
+      <div className="rounded-xl border p-5">
+        <p className="text-sm text-muted">No device data available.</p>
       </div>
     );
   }

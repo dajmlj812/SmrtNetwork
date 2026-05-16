@@ -19,11 +19,11 @@ function SummaryBar({ vpnData }: { vpnData: VpnStatus[] }) {
 
   return (
     <div className="flex items-center gap-4 text-sm">
-      <span className="text-white/60">
-        <span className="font-semibold text-white">{hubs}</span> hub{hubs !== 1 ? "s" : ""}
+      <span className="text-foreground-muted">
+        <span className="font-semibold text-foreground-strong">{hubs}</span> hub{hubs !== 1 ? "s" : ""}
       </span>
-      <span className="text-white/60">
-        <span className="font-semibold text-white">{spokes}</span> spoke{spokes !== 1 ? "s" : ""}
+      <span className="text-foreground-muted">
+        <span className="font-semibold text-foreground-strong">{spokes}</span> spoke{spokes !== 1 ? "s" : ""}
       </span>
       {unreachable > 0 ? (
         <span className="text-red-400">
@@ -45,14 +45,14 @@ function VpnRow({ vpn }: { vpn: VpnStatus }) {
     <>
       <tr
         className={cn(
-          "border-b border-white/5 hover:bg-white/3 transition-colors cursor-pointer",
+          "border-b hover:bg-overlay transition-colors cursor-pointer",
           unreachable > 0 && "bg-red-500/5"
         )}
         onClick={() => setExpanded((e) => !e)}
       >
         <td className="px-4 py-3 text-sm">{vpn.networkName}</td>
-        <td className="px-4 py-3 text-sm font-mono text-white/60">{vpn.deviceSerial}</td>
-        <td className="px-4 py-3 text-sm text-white/60">{vpn.deviceModel}</td>
+        <td className="px-4 py-3 text-sm font-mono text-foreground-muted">{vpn.deviceSerial}</td>
+        <td className="px-4 py-3 text-sm text-foreground-muted">{vpn.deviceModel}</td>
         <td className="px-4 py-3 text-sm">
           <span className={cn(
             "px-2 py-0.5 rounded text-xs",
@@ -63,7 +63,7 @@ function VpnRow({ vpn }: { vpn: VpnStatus }) {
             {vpn.vpnMode}
           </span>
         </td>
-        <td className="px-4 py-3 text-sm text-white/60">
+        <td className="px-4 py-3 text-sm text-foreground-muted">
           {peers.length > 0 ? (
             <span className={cn(unreachable > 0 && "text-red-400")}>
               {peers.length} ({unreachable} unreachable)
@@ -84,13 +84,13 @@ function VpnRow({ vpn }: { vpn: VpnStatus }) {
         <td className="px-4 py-3">
           {peers.length > 0 && (
             expanded
-              ? <ChevronDown size={14} className="text-white/30" />
-              : <ChevronRight size={14} className="text-white/30" />
+              ? <ChevronDown size={14} className="text-faint" />
+              : <ChevronRight size={14} className="text-faint" />
           )}
         </td>
       </tr>
       {expanded && peers.length > 0 && (
-        <tr className="border-b border-white/5">
+        <tr className="border-b border">
           <td colSpan={7} className="px-4 pb-3 pt-1">
             <div className="pl-4 space-y-1">
               {peers.map((peer: VpnPeer) => (
@@ -102,7 +102,7 @@ function VpnRow({ vpn }: { vpn: VpnStatus }) {
                     "w-1.5 h-1.5 rounded-full shrink-0",
                     peer.reachability === "reachable" ? "bg-green-500" : "bg-red-500"
                   )} />
-                  <span className="text-white/70">{peer.networkName}</span>
+                  <span className="text-foreground-muted">{peer.networkName}</span>
                   <span className={cn(
                     "text-xs",
                     peer.reachability === "reachable" ? "text-green-400" : "text-red-400"
@@ -136,10 +136,10 @@ export function VpnTable() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-white/10 overflow-hidden">
+      <div className="rounded-xl border overflow-hidden">
         <div className="p-4 space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-10 bg-white/5 rounded animate-pulse" />
+            <div key={i} className="h-10 bg-overlay rounded animate-pulse" />
           ))}
         </div>
       </div>
@@ -156,7 +156,7 @@ export function VpnTable() {
 
   if (!data || data.length === 0) {
     return (
-      <div className="text-sm text-white/40 text-center py-12">
+      <div className="text-sm text-muted text-center py-12">
         No VPN-enabled appliances found in this organization.
       </div>
     );
@@ -165,11 +165,11 @@ export function VpnTable() {
   return (
     <div className="space-y-4">
       <SummaryBar vpnData={data} />
-      <div className="rounded-xl border border-white/10 overflow-hidden">
+      <div className="rounded-xl border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-white/10 text-xs text-white/40">
+              <tr className="border-b text-xs text-muted">
                 <th className="px-4 py-3 text-left font-medium">Network</th>
                 <th className="px-4 py-3 text-left font-medium">Device</th>
                 <th className="px-4 py-3 text-left font-medium">Model</th>

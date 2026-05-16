@@ -19,9 +19,12 @@ import type {
 } from "./types";
 import { getMerakiApiKey, getMerakiBaseUrl } from "@/lib/config";
 
+const MAX_429_RETRIES = 4;
+
 async function merakiFetch<T>(
   path: string,
-  options?: RequestInit & { params?: Record<string, string> }
+  options?: RequestInit & { params?: Record<string, string> },
+  attempt = 0
 ): Promise<T> {
   const url = new URL(`${getMerakiBaseUrl()}${path}`);
   if (options?.params) {
@@ -40,9 +43,20 @@ async function merakiFetch<T>(
   });
 
   if (res.status === 429) {
-    const retryAfter = Number(res.headers.get("Retry-After") ?? 1);
-    await new Promise((r) => setTimeout(r, retryAfter * 1000));
-    return merakiFetch<T>(path, options);
+    if (attempt >= MAX_429_RETRIES) {
+      throw new Error(
+        `Meraki API rate-limited (429) on ${path} after ${MAX_429_RETRIES} retries`
+      );
+    }
+    // Meraki sends Retry-After in seconds; bound + exponential jitter as a safety net
+    const headerWait = Number(res.headers.get("Retry-After"));
+    const baseSec = Number.isFinite(headerWait) && headerWait > 0 ? headerWait : 1;
+    const waitMs = Math.min(baseSec * 1000 * Math.pow(2, attempt), 8000);
+    console.warn(
+      `[meraki] 429 on ${path} — retry ${attempt + 1}/${MAX_429_RETRIES} after ${waitMs}ms`
+    );
+    await new Promise((r) => setTimeout(r, waitMs));
+    return merakiFetch<T>(path, options, attempt + 1);
   }
 
   if (!res.ok) {

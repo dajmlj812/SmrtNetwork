@@ -18,14 +18,16 @@ function formatAlertType(type: string): string {
 
 function AlertRow({ alert }: { alert: AlertEntry }) {
   return (
-    <li className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0">
+    <li className="flex items-center gap-3 py-2 border-b last:border-0">
       <span
         className={cn(
           "w-2 h-2 rounded-full shrink-0",
-          alert.enabled ? "bg-green-500" : "bg-gray-500"
+          alert.enabled ? "bg-accent" : "bg-overlay-strong"
         )}
       />
-      <span className="text-sm text-white/80">{formatAlertType(alert.type)}</span>
+      <span className={cn("text-sm", alert.enabled ? "text-foreground" : "text-faint")}>
+        {formatAlertType(alert.type)}
+      </span>
     </li>
   );
 }
@@ -75,8 +77,8 @@ export function AlertsList() {
 
   if (!selectedNetwork) {
     return (
-      <div className="rounded-xl border border-white/10 p-5">
-        <p className="text-sm text-white/40">
+      <div className="rounded-xl border bg-card p-5">
+        <p className="text-sm text-muted">
           Select a network from the sidebar to load active alerts and AI-generated
           remediation recommendations.
         </p>
@@ -86,7 +88,7 @@ export function AlertsList() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-white/10 p-5 flex items-center gap-2 text-white/50">
+      <div className="rounded-xl border bg-card p-5 flex items-center gap-2 text-muted">
         <Loader2 size={16} className="animate-spin" />
         <span className="text-sm">Loading alert settings…</span>
       </div>
@@ -95,8 +97,8 @@ export function AlertsList() {
 
   if (isError) {
     return (
-      <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-5">
-        <p className="text-sm text-red-400">
+      <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-5">
+        <p className="text-sm text-red-500 dark:text-red-400">
           {error instanceof Error ? error.message : "Failed to load alerts"}
         </p>
       </div>
@@ -112,48 +114,47 @@ export function AlertsList() {
   return (
     <div className="space-y-4">
       {/* Default Destinations card */}
-      <div className="rounded-xl border border-white/10 p-4 space-y-2">
-        <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+      <div className="rounded-xl border bg-card p-4 space-y-2">
+        <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">
           Default Notification Destinations
         </h3>
         <div className="flex flex-wrap gap-4 text-sm">
           {dest.allAdmins && (
-            <span className="flex items-center gap-1.5 text-white/70">
-              <Users size={13} className="text-blue-400" />
+            <span className="flex items-center gap-1.5 text-foreground">
+              <Users size={13} className="text-info" />
               All Admins
             </span>
           )}
           {dest.snmp && (
-            <span className="flex items-center gap-1.5 text-white/70">
-              <Radio size={13} className="text-purple-400" />
+            <span className="flex items-center gap-1.5 text-foreground">
+              <Radio size={13} className="text-purple-500 dark:text-purple-400" />
               SNMP
             </span>
           )}
           {dest.emails.length > 0 && (
-            <span className="flex items-center gap-1.5 text-white/70">
-              <Mail size={13} className="text-green-400" />
+            <span className="flex items-center gap-1.5 text-foreground">
+              <Mail size={13} className="text-accent" />
               {dest.emails.join(", ")}
             </span>
           )}
           {!dest.allAdmins && !dest.snmp && dest.emails.length === 0 && (
-            <span className="text-white/30 text-xs">No default destinations configured</span>
+            <span className="text-muted text-xs">No default destinations configured</span>
           )}
         </div>
       </div>
 
       {/* Alert sections */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Enabled */}
-        <div className="rounded-xl border border-white/10 p-5">
+        <div className="rounded-xl border bg-card p-5">
           <div className="flex items-center gap-2 mb-3">
-            <Bell size={14} className="text-green-400" />
-            <h3 className="font-semibold text-sm">
+            <Bell size={14} className="text-accent" />
+            <h3 className="font-semibold text-sm text-foreground-strong">
               Enabled
-              <span className="ml-2 text-xs text-white/40">({enabledAlerts.length})</span>
+              <span className="ml-2 text-xs text-muted">({enabledAlerts.length})</span>
             </h3>
           </div>
           {enabledAlerts.length === 0 ? (
-            <p className="text-xs text-white/30">No alerts enabled.</p>
+            <p className="text-xs text-muted">No alerts enabled.</p>
           ) : (
             <ul>
               {enabledAlerts.map((a) => (
@@ -163,17 +164,16 @@ export function AlertsList() {
           )}
         </div>
 
-        {/* Disabled */}
-        <div className="rounded-xl border border-white/10 p-5">
+        <div className="rounded-xl border bg-card p-5">
           <div className="flex items-center gap-2 mb-3">
-            <BellOff size={14} className="text-gray-500" />
-            <h3 className="font-semibold text-sm">
+            <BellOff size={14} className="text-muted" />
+            <h3 className="font-semibold text-sm text-foreground-strong">
               Disabled
-              <span className="ml-2 text-xs text-white/40">({disabledAlerts.length})</span>
+              <span className="ml-2 text-xs text-muted">({disabledAlerts.length})</span>
             </h3>
           </div>
           {disabledAlerts.length === 0 ? (
-            <p className="text-xs text-white/30">All alerts are enabled.</p>
+            <p className="text-xs text-muted">All alerts are enabled.</p>
           ) : (
             <ul>
               {disabledAlerts.map((a) => (
@@ -185,13 +185,13 @@ export function AlertsList() {
       </div>
 
       {/* AI Recommendations */}
-      <div className="rounded-xl border border-white/10 p-5 space-y-3">
+      <div className="rounded-xl border bg-gradient-to-br from-accent-soft/40 via-card to-card border-accent/30 p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-sm">AI Recommendations</h3>
+          <h3 className="font-semibold text-sm text-foreground-strong">AI Recommendations</h3>
           <button
             onClick={runAiRecommendations}
             disabled={analyzing}
-            className="text-xs px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+            className="text-xs px-3 py-1.5 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-50 transition-colors flex items-center gap-1.5 font-medium"
           >
             {analyzing && <Loader2 size={12} className="animate-spin" />}
             {analyzing ? "Analyzing…" : "Get AI Recommendations"}
@@ -199,17 +199,17 @@ export function AlertsList() {
         </div>
 
         {aiError && (
-          <p className="text-xs text-red-400">{aiError}</p>
+          <p className="text-xs text-red-500 dark:text-red-400">{aiError}</p>
         )}
 
         {aiResult && (
-          <div className="border-t border-white/10 pt-3">
+          <div className="border-t pt-3">
             <MarkdownOutput content={aiResult} />
           </div>
         )}
 
         {!aiResult && !analyzing && (
-          <p className="text-sm text-white/40">
+          <p className="text-sm text-muted">
             Click &quot;Get AI Recommendations&quot; to receive a health assessment and alert tuning suggestions.
           </p>
         )}

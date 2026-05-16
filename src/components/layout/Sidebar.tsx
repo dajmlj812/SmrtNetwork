@@ -34,24 +34,47 @@ import { OrgSelector } from "@/components/layout/OrgSelector";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { APP_VERSION } from "@/lib/version";
 
-const nav: { href: Route; label: string; icon: React.ElementType }[] = [
-  { href: "/overview" as Route, label: "Overview", icon: Globe },
-  { href: "/compare" as Route, label: "Compare", icon: GitCompare },
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/topology" as Route, label: "Topology", icon: Share2 },
-  { href: "/chat" as Route, label: "Ask AI", icon: MessageSquare },
-  { href: "/devices", label: "Devices", icon: Monitor },
-  { href: "/firmware" as Route, label: "Firmware", icon: Cpu },
-  { href: "/clients" as Route, label: "Clients", icon: Laptop },
-  { href: "/network", label: "Traffic", icon: Network },
-  { href: "/switches" as Route, label: "Switches", icon: Layers },
-  { href: "/wireless" as Route, label: "Wireless", icon: Wifi },
-  { href: "/vpn" as Route, label: "VPN", icon: Shield },
-  { href: "/cellular" as Route, label: "Cellular", icon: Signal },
-  { href: "/sensors" as Route, label: "Sensors", icon: Thermometer },
-  { href: "/cameras" as Route, label: "Cameras", icon: Camera },
-  { href: "/alerts", label: "Alerts", icon: Bell },
-  { href: "/settings" as Route, label: "Settings", icon: Settings },
+type NavItem = { href: Route; label: string; icon: React.ElementType };
+type NavSection = { label: string; items: NavItem[] };
+
+const sections: NavSection[] = [
+  {
+    label: "Monitor",
+    items: [
+      { href: "/overview" as Route, label: "Overview", icon: Globe },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/topology" as Route, label: "Topology", icon: Share2 },
+      { href: "/alerts", label: "Alerts", icon: Bell },
+    ],
+  },
+  {
+    label: "Inventory",
+    items: [
+      { href: "/devices", label: "Devices", icon: Monitor },
+      { href: "/clients" as Route, label: "Clients", icon: Laptop },
+      { href: "/firmware" as Route, label: "Firmware", icon: Cpu },
+      { href: "/network", label: "Traffic", icon: Network },
+    ],
+  },
+  {
+    label: "By product",
+    items: [
+      { href: "/switches" as Route, label: "Switches", icon: Layers },
+      { href: "/wireless" as Route, label: "Wireless", icon: Wifi },
+      { href: "/vpn" as Route, label: "VPN", icon: Shield },
+      { href: "/cellular" as Route, label: "Cellular", icon: Signal },
+      { href: "/sensors" as Route, label: "Sensors", icon: Thermometer },
+      { href: "/cameras" as Route, label: "Cameras", icon: Camera },
+    ],
+  },
+  {
+    label: "Tools",
+    items: [
+      { href: "/chat" as Route, label: "Ask AI", icon: MessageSquare },
+      { href: "/compare" as Route, label: "Compare", icon: GitCompare },
+      { href: "/settings" as Route, label: "Settings", icon: Settings },
+    ],
+  },
 ];
 
 export function Sidebar() {
@@ -70,7 +93,7 @@ export function Sidebar() {
     <>
       {/* Mobile hamburger */}
       <button
-        className="fixed top-3 left-3 z-50 md:hidden rounded-lg p-1.5 bg-[var(--card)] border border-[var(--border)] text-white/60 hover:text-white transition-colors"
+        className="fixed top-3 left-3 z-50 md:hidden rounded-lg p-1.5 bg-card border text-muted hover:text-foreground-strong transition-colors"
         onClick={() => setMobileOpen((o) => !o)}
         aria-label={mobileOpen ? "Close menu" : "Open menu"}
       >
@@ -92,8 +115,8 @@ export function Sidebar() {
           "fixed inset-y-0 left-0 z-50 w-56",
           "transition-transform duration-300 ease-in-out",
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-          "border-r border-[var(--border)] flex flex-col p-4 gap-1",
-          "bg-[var(--background)]"
+          "border-r flex flex-col p-4 gap-1",
+          "bg-background"
         )}
       >
         {/* Brand logo */}
@@ -106,10 +129,10 @@ export function Sidebar() {
             className="rounded-md shrink-0"
           />
           <div className="flex flex-col leading-tight">
-            <span className="text-sm font-bold text-[var(--foreground)] group-hover:text-[#30ba67] transition-colors">
+            <span className="text-sm font-bold text-foreground-strong group-hover:text-accent transition-colors">
               SmrtNetwork
             </span>
-            <span className="text-[10px] text-[var(--muted)]">BuildITSmrt, LLC.</span>
+            <span className="text-[10px] text-muted">BuildITSmrt, LLC.</span>
           </div>
         </Link>
 
@@ -119,51 +142,55 @@ export function Sidebar() {
         {/* Network selector */}
         <NetworkSelector />
 
-        <div className="border-t border-[var(--border)] my-2" />
+        <div className="border-t my-2" />
 
         {/* Search trigger */}
         <button
           onClick={openSearch}
           className={cn(
             "flex items-center gap-2 px-3 py-2 rounded-lg text-sm mb-1",
-            "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)]",
-            "border border-[var(--border)] hover:border-[#1e9c4a]/40 transition-colors"
+            "text-muted hover:text-foreground-strong hover:bg-overlay-strong",
+            "border hover:border-strong transition-colors"
           )}
         >
           <Search size={14} className="shrink-0" />
           <span className="flex-1 text-left truncate">Search…</span>
-          <kbd className="text-[10px] text-[var(--muted)] font-mono leading-none">
+          <kbd className="text-[10px] text-faint font-mono leading-none">
             Ctrl+K
           </kbd>
         </button>
 
-        {/* Nav links */}
-        <div className="flex flex-col flex-1 overflow-y-auto gap-0.5">
-          {nav.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-                  active
-                    ? "bg-[#1e9c4a]/15 text-[#30ba67] font-medium"
-                    : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)]"
-                )}
-              >
-                <Icon
-                  size={16}
-                  className={active ? "text-[#1e9c4a]" : undefined}
-                />
-                {label}
-              </Link>
-            );
-          })}
-        </div>
+        {/* Nav sections */}
+        <nav className="flex flex-col flex-1 overflow-y-auto gap-3 mt-2">
+          {sections.map((section) => (
+            <div key={section.label} className="flex flex-col gap-0.5">
+              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
+                {section.label}
+              </p>
+              {section.items.map(({ href, label, icon: Icon }) => {
+                const active = pathname === href;
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors",
+                      active
+                        ? "bg-accent-soft text-accent font-medium"
+                        : "text-foreground-muted hover:text-foreground-strong hover:bg-overlay-strong"
+                    )}
+                  >
+                    <Icon size={16} className={active ? "text-accent" : undefined} />
+                    {label}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
 
         {/* Footer */}
-        <div className="border-t border-[var(--border)] mt-2 pt-3 flex items-center justify-between px-1">
+        <div className="border-t mt-2 pt-3 flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <button
@@ -172,13 +199,13 @@ export function Sidebar() {
                 await fetch("/api/auth/logout", { method: "POST" });
                 window.location.href = "/login";
               }}
-              className="p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-colors"
+              className="p-1.5 rounded-lg text-muted hover:text-foreground-strong hover:bg-overlay-strong transition-colors"
               title="Sign out"
             >
               <LogOut size={14} />
             </button>
           </div>
-          <span className="text-[10px] text-[var(--muted)]">v{APP_VERSION}</span>
+          <span className="text-[10px] text-faint">v{APP_VERSION}</span>
         </div>
       </aside>
     </>

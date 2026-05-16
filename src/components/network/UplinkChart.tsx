@@ -49,14 +49,14 @@ function DeviceChart({ device, timespanSeconds }: { device: UplinkDevice; timesp
   const timespanLabel = TIMESPANS.find((t) => t.value === timespanSeconds)?.label ?? "24h";
 
   return (
-    <div className="rounded-xl border border-white/10 p-5 space-y-3">
+    <div className="rounded-xl border p-5 space-y-3">
       <div>
-        <h3 className="font-semibold text-sm text-white">{device.name || device.serial}</h3>
-        <p className="text-xs text-white/40">{device.model} · WAN1 · Last {timespanLabel}</p>
+        <h3 className="font-semibold text-sm text-foreground-strong">{device.name || device.serial}</h3>
+        <p className="text-xs text-muted">{device.model} · WAN1 · Last {timespanLabel}</p>
       </div>
 
       {chartData.length === 0 ? (
-        <p className="text-sm text-white/40">No uplink history available for this device.</p>
+        <p className="text-sm text-muted">No uplink history available for this device.</p>
       ) : (
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -124,10 +124,10 @@ function DeviceChart({ device, timespanSeconds }: { device: UplinkDevice; timesp
 
 function SkeletonChart() {
   return (
-    <div className="rounded-xl border border-white/10 p-5 space-y-3">
-      <div className="h-4 w-32 bg-white/10 rounded animate-pulse" />
-      <div className="h-3 w-48 bg-white/5 rounded animate-pulse" />
-      <div className="h-48 bg-white/5 rounded-lg animate-pulse" />
+    <div className="rounded-xl border p-5 space-y-3">
+      <div className="h-4 w-32 bg-overlay-strong rounded animate-pulse" />
+      <div className="h-3 w-48 bg-overlay rounded animate-pulse" />
+      <div className="h-48 bg-overlay rounded-lg animate-pulse" />
     </div>
   );
 }
@@ -157,7 +157,7 @@ export function UplinkChart() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">
+        <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider">
           WAN Uplink Health
         </h2>
         <div className="flex items-center gap-1">
@@ -168,8 +168,8 @@ export function UplinkChart() {
               className={cn(
                 "px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
                 timespan === t.value
-                  ? "bg-[#1e9c4a]/20 text-[#30ba67] border border-[#1e9c4a]/40"
-                  : "text-white/40 hover:text-white/70 hover:bg-white/5"
+                  ? "bg-accent/20 text-accent border border-accent/40"
+                  : "text-muted hover:text-foreground-muted hover:bg-overlay"
               )}
             >
               {t.label}
@@ -181,8 +181,8 @@ export function UplinkChart() {
       {isLoading ? (
         <SkeletonChart />
       ) : !data || data.length === 0 ? (
-        <div className="rounded-xl border border-white/10 p-5">
-          <p className="text-sm text-white/40">No WAN appliances in this network</p>
+        <div className="rounded-xl border p-5">
+          <p className="text-sm text-muted">No WAN appliances in this network</p>
         </div>
       ) : (
         data.map((device) => (

@@ -23,7 +23,7 @@ function MetricBadge({ reading }: { reading: SensorReading }) {
         <span className={cn("font-mono font-semibold", color)}>
           {c.toFixed(1)}°C
         </span>
-        <span className="text-white/30 text-xs">/ {reading.temperature.fahrenheit.toFixed(1)}°F</span>
+        <span className="text-faint text-xs">/ {reading.temperature.fahrenheit.toFixed(1)}°F</span>
       </div>
     );
   }
@@ -36,7 +36,7 @@ function MetricBadge({ reading }: { reading: SensorReading }) {
       <div className="flex items-center gap-1.5 text-sm">
         <Droplets size={13} className={color} />
         <span className={cn("font-mono font-semibold", color)}>{rh}%</span>
-        <span className="text-white/30 text-xs">RH</span>
+        <span className="text-faint text-xs">RH</span>
       </div>
     );
   }
@@ -65,13 +65,13 @@ function MetricBadge({ reading }: { reading: SensorReading }) {
       <div className="flex items-center gap-1.5 text-sm">
         <Zap size={13} className={color} />
         <span className={cn("font-mono font-semibold", color)}>{ppm}</span>
-        <span className="text-white/30 text-xs">ppm CO₂</span>
+        <span className="text-faint text-xs">ppm CO₂</span>
       </div>
     );
   }
 
   return (
-    <p className="text-xs text-white/40 capitalize">{reading.metric}</p>
+    <p className="text-xs text-muted capitalize">{reading.metric}</p>
   );
 }
 
@@ -98,11 +98,11 @@ export default function SensorsPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Thermometer size={20} className="text-blue-400" />
-        <h1 className="text-2xl font-bold">Sensors</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground-strong">Sensors</h1>
       </div>
 
       {isLoading && (
-        <div className="flex items-center gap-2 text-white/50 py-8">
+        <div className="flex items-center gap-2 text-muted py-8">
           <Loader2 size={16} className="animate-spin" />
           <span className="text-sm">Loading sensor readings…</span>
         </div>
@@ -113,7 +113,7 @@ export default function SensorsPage() {
       )}
 
       {!isLoading && !isError && (!filtered || filtered.length === 0) && (
-        <div className="rounded-xl border border-white/10 p-8 text-center text-white/40 text-sm">
+        <div className="rounded-xl border p-8 text-center text-muted text-sm">
           No MT sensors found{selectedNetwork ? ` in ${selectedNetwork.name}` : ""}.
         </div>
       )}
@@ -129,15 +129,15 @@ export default function SensorsPage() {
             return (
               <div
                 key={device.serial}
-                className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3"
+                className="rounded-xl border bg-overlay p-4 space-y-3"
               >
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-semibold text-sm font-mono">{device.serial}</p>
-                    <p className="text-xs text-white/40">{device.network.name}</p>
+                    <p className="text-xs text-muted">{device.network.name}</p>
                   </div>
                   {latestTs && (
-                    <span className="text-[10px] text-white/30">
+                    <span className="text-[10px] text-faint">
                       {new Date(latestTs).toLocaleTimeString()}
                     </span>
                   )}
@@ -145,12 +145,12 @@ export default function SensorsPage() {
 
                 <div className="space-y-2">
                   {device.readings.map((r, i) => (
-                    <div key={i} className="rounded-lg bg-white/5 px-3 py-2">
+                    <div key={i} className="rounded-lg bg-overlay px-3 py-2">
                       <MetricBadge reading={r} />
                     </div>
                   ))}
                   {device.readings.length === 0 && (
-                    <p className="text-xs text-white/30">No readings yet</p>
+                    <p className="text-xs text-faint">No readings yet</p>
                   )}
                 </div>
               </div>

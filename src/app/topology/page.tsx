@@ -6,8 +6,8 @@ export default function TopologyPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Network Topology</h1>
-        <p className="text-sm text-white/40 mt-1">
+        <h1 className="text-2xl font-bold text-foreground-strong">Network Topology</h1>
+        <p className="text-sm text-muted mt-1">
           Visual device map — hover a node for details. Color indicates live status.
         </p>
       </div>

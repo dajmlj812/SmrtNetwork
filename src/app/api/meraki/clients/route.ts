@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { meraki } from "@/lib/meraki/client";
+import { cached } from "@/lib/meraki/cache";
+
+// Client list is the slowest call (5+ s for big networks). Cache briefly so
+// repeat visits and per-row sub-fetches don't refetch the whole snapshot.
+// Per-MAC lookups are NOT cached — they're tiny and we want fresh.
+const CLIENTS_TTL_MS = 30 * 1000;
 
 export async function GET(req: NextRequest) {
   const networkId = req.nextUrl.searchParams.get("networkId");
@@ -13,11 +19,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(client);
     }
     if (serial) {
-      const clients = await meraki.clients.listByDevice(serial, timespan);
+      const clients = await cached(
+        `meraki:clients-by-device:${serial}:${timespan}`,
+        CLIENTS_TTL_MS,
+        () => meraki.clients.listByDevice(serial, timespan)
+      );
       return NextResponse.json(clients);
     }
     if (networkId) {
-      const clients = await meraki.clients.listByNetwork(networkId, timespan);
+      const clients = await cached(
+        `meraki:clients:${networkId}:${timespan}`,
+        CLIENTS_TTL_MS,
+        () => meraki.clients.listByNetwork(networkId, timespan)
+      );
       return NextResponse.json(clients);
     }
     return NextResponse.json(

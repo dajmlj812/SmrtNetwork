@@ -8,7 +8,7 @@ import { UplinkChart } from "@/components/network/UplinkChart";
 export default function NetworkPage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Traffic & Flow</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground-strong">Traffic & Flow</h1>
       <BandwidthSummary />
       <TrafficChart />
       <TopTalkers />

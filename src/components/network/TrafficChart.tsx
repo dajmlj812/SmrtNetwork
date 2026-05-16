@@ -35,9 +35,9 @@ function LoadingSkeleton() {
     <div className="space-y-3 pt-2">
       {[80, 60, 40].map((w, i) => (
         <div key={i} className="flex items-center gap-3">
-          <div className="w-24 h-3 rounded bg-white/10 animate-pulse shrink-0" />
+          <div className="w-24 h-3 rounded bg-overlay-strong animate-pulse shrink-0" />
           <div
-            className="h-5 rounded bg-white/10 animate-pulse"
+            className="h-5 rounded bg-overlay-strong animate-pulse"
             style={{ width: `${w}%` }}
           />
         </div>
@@ -66,11 +66,11 @@ export function TrafficChart() {
   });
 
   return (
-    <div className="rounded-xl border border-white/10 p-5">
+    <div className="rounded-xl border p-5">
       <h2 className="font-semibold mb-4">Top Clients by Bandwidth (last hour)</h2>
 
       {!selectedNetwork && (
-        <p className="text-sm text-white/40">
+        <p className="text-sm text-muted">
           Select a network to view traffic.
         </p>
       )}
@@ -84,7 +84,7 @@ export function TrafficChart() {
       )}
 
       {selectedNetwork && data && data.length === 0 && (
-        <p className="text-sm text-white/40">No client traffic data available.</p>
+        <p className="text-sm text-muted">No client traffic data available.</p>
       )}
 
       {selectedNetwork && data && data.length > 0 && (

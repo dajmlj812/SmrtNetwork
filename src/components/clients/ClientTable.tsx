@@ -30,17 +30,24 @@ function isRecentlyActive(lastSeen: string): boolean {
 }
 
 function SortHeader({
-  label, sortKey, current, dir, onSort,
+  label, sortKey, current, dir, onSort, align = "left",
 }: {
   label: string; sortKey: SortKey; current: SortKey; dir: SortDir; onSort: (k: SortKey) => void;
+  align?: "left" | "right";
 }) {
   const active = current === sortKey;
   return (
     <th
       onClick={() => onSort(sortKey)}
-      className="px-3 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider cursor-pointer hover:text-white/70 select-none whitespace-nowrap"
+      className={cn(
+        "px-3 py-2.5 text-[11px] font-semibold text-muted uppercase tracking-wider cursor-pointer hover:text-foreground-strong select-none whitespace-nowrap",
+        align === "right" ? "text-right" : "text-left"
+      )}
     >
-      <span className="flex items-center gap-1">
+      <span className={cn(
+        "flex items-center gap-1",
+        align === "right" && "justify-end"
+      )}>
         {label}
         {active ? (
           dir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
@@ -187,8 +194,8 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
 
   if (!selectedNetwork) {
     return (
-      <div className="rounded-xl border border-white/10 p-5">
-        <p className="text-sm text-white/40">Select a network from the sidebar to view client devices.</p>
+      <div className="rounded-xl border bg-card p-5">
+        <p className="text-sm text-muted">Select a network from the sidebar to view client devices.</p>
       </div>
     );
   }
@@ -198,21 +205,21 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
       {/* Toolbar — stacks vertically on mobile */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div className="relative flex-1 w-full sm:max-w-sm">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name, MAC, IP, SSID, VLAN…"
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg text-sm bg-white/5 border border-white/10 placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg text-sm bg-card border placeholder:text-faint text-foreground-strong focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent"
           />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {allGroups.length > 0 && (
             <select
               value={groupFilter}
               onChange={(e) => setGroupFilter(e.target.value)}
-              className="text-sm rounded-lg px-3 py-1.5 bg-white/5 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="text-sm rounded-lg px-3 py-1.5 bg-card border text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent"
             >
               <option value="">All groups</option>
               {allGroups.map((g) => (
@@ -223,15 +230,16 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
           <select
             value={timespan}
             onChange={(e) => setTimespan(Number(e.target.value))}
-            className="text-sm rounded-lg px-3 py-1.5 bg-white/5 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="text-sm rounded-lg px-3 py-1.5 bg-card border text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent"
           >
             {TIMESPANS.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
           {clients && (
-            <span className="text-xs text-white/30 whitespace-nowrap">
-              {sorted.length} {sorted.length === 1 ? "client" : "clients"}
+            <span className="text-xs text-muted whitespace-nowrap">
+              <span className="font-semibold text-foreground-strong tabular-nums">{sorted.length}</span>
+              {" "}{sorted.length === 1 ? "client" : "clients"}
               {search && clients.length !== sorted.length && ` of ${clients.length}`}
             </span>
           )}
@@ -239,7 +247,7 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
             <button
               type="button"
               onClick={handleExportCSV}
-              className="flex items-center gap-1 text-xs text-white/40 hover:text-white/70 transition-colors"
+              className="flex items-center gap-1 text-xs text-muted hover:text-foreground-strong transition-colors"
               title="Export visible clients as CSV"
             >
               <Download size={13} />
@@ -251,7 +259,7 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
 
       {/* Loading */}
       {isLoading && (
-        <div className="rounded-xl border border-white/10 p-8 flex items-center justify-center gap-2 text-white/40">
+        <div className="rounded-xl border bg-card p-8 flex items-center justify-center gap-2 text-muted">
           <Loader2 size={16} className="animate-spin" />
           <span className="text-sm">Loading clients…</span>
         </div>
@@ -259,15 +267,15 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
 
       {/* Error */}
       {isError && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-5">
-          <p className="text-sm text-red-400">{error instanceof Error ? error.message : "Failed to load clients"}</p>
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-5">
+          <p className="text-sm text-red-500 dark:text-red-400">{error instanceof Error ? error.message : "Failed to load clients"}</p>
         </div>
       )}
 
       {/* Empty */}
       {!isLoading && clients && sorted.length === 0 && (
-        <div className="rounded-xl border border-white/10 p-5">
-          <p className="text-sm text-white/40">
+        <div className="rounded-xl border bg-card p-8 text-center">
+          <p className="text-sm text-muted">
             {search ? `No clients match "${search}".` : "No clients seen in this time window."}
           </p>
         </div>
@@ -275,10 +283,10 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
 
       {/* Table */}
       {!isLoading && sorted.length > 0 && (
-        <div className="rounded-xl border border-white/10 overflow-hidden">
+        <div className="rounded-xl border bg-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-white/3 border-b border-white/10">
+              <thead className="bg-overlay/60 border-b">
                 <tr>
                   <th className="px-3 py-2 w-6" />
                   <SortHeader label="Name / MAC" sortKey="label" current={sortKey} dir={sortDir} onSort={handleSort} />
@@ -289,10 +297,10 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
                   <SortHeader label="VLAN" sortKey="vlan" current={sortKey} dir={sortDir} onSort={handleSort} />
                   <SortHeader label="AP" sortKey="ap" current={sortKey} dir={sortDir} onSort={handleSort} />
                   <SortHeader label="Last Seen" sortKey="lastSeen" current={sortKey} dir={sortDir} onSort={handleSort} />
-                  <SortHeader label="Usage" sortKey="usage" current={sortKey} dir={sortDir} onSort={handleSort} />
+                  <SortHeader label="Usage" sortKey="usage" current={sortKey} dir={sortDir} onSort={handleSort} align="right" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y">
                 {sorted.map((c) => {
                   const total = c.usage.sent + c.usage.recv;
                   const active = isRecentlyActive(c.lastSeen);
@@ -302,68 +310,68 @@ export function ClientTable({ selectedClient, onSelected }: ClientTableProps) {
                       key={c.id}
                       onClick={() => onSelected?.(c)}
                       className={cn(
-                        "hover:bg-white/3 transition-colors",
+                        "hover:bg-overlay transition-colors",
                         onSelected && "cursor-pointer",
-                        isSelected && "border-l-2 border-l-blue-500 bg-blue-500/5"
+                        isSelected && "border-l-2 border-l-accent bg-accent-soft"
                       )}
                     >
                       <td className="pl-3 py-2.5">
                         <span
                           className={cn(
-                            "block w-2 h-2 rounded-full",
-                            active ? "bg-green-500" : "bg-white/15"
+                            "block w-2.5 h-2.5 rounded-full ring-2 ring-card",
+                            active ? "bg-accent" : "bg-overlay-strong"
                           )}
                           title={active ? "Active (seen < 15 min ago)" : "Inactive"}
                         />
                       </td>
                       <td className="px-3 py-2.5">
-                        <div className="font-medium text-white/90 truncate max-w-[160px]">
-                          {c.description?.trim() || <span className="text-white/40 italic">unnamed</span>}
+                        <div className="font-medium text-foreground-strong truncate max-w-[160px]">
+                          {c.description?.trim() || <span className="text-muted italic">unnamed</span>}
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                          <span className="font-mono text-xs text-white/30">{c.mac}</span>
+                          <span className="font-mono text-xs text-faint">{c.mac}</span>
                           {tags?.[c.mac.toLowerCase()] && (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/20 shrink-0">
+                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-info-soft text-info border border-info/20 shrink-0">
                               {tags[c.mac.toLowerCase()].label}
                               {tags[c.mac.toLowerCase()].group && (
-                                <span className="text-blue-400/60">· {tags[c.mac.toLowerCase()].group}</span>
+                                <span className="opacity-60">· {tags[c.mac.toLowerCase()].group}</span>
                               )}
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 font-mono text-xs text-white/70 whitespace-nowrap">
-                        {c.ip ?? <span className="text-white/20">—</span>}
+                      <td className="px-3 py-2.5 font-mono text-xs text-foreground-muted whitespace-nowrap">
+                        {c.ip ?? <span className="text-faint">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 text-white/70 truncate max-w-[120px]">
-                        {c.manufacturer ?? <span className="text-white/20">—</span>}
+                      <td className="px-3 py-2.5 text-foreground-muted truncate max-w-[120px]">
+                        {c.manufacturer ?? <span className="text-faint">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 text-white/70 truncate max-w-[100px]">
-                        {c.os ?? <span className="text-white/20">—</span>}
+                      <td className="px-3 py-2.5 text-foreground-muted truncate max-w-[100px]">
+                        {c.os ?? <span className="text-faint">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 text-white/70 truncate max-w-[100px]">
-                        {c.ssid ?? <span className="text-white/20">—</span>}
+                      <td className="px-3 py-2.5 text-foreground-muted truncate max-w-[100px]">
+                        {c.ssid ?? <span className="text-faint">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 text-white/70">
-                        {c.vlan ?? <span className="text-white/20">—</span>}
+                      <td className="px-3 py-2.5 text-foreground-muted">
+                        {c.vlan ?? <span className="text-faint">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 text-white/70 truncate max-w-[120px]">
-                        {c.recentDeviceName ?? <span className="text-white/20">—</span>}
+                      <td className="px-3 py-2.5 text-foreground-muted truncate max-w-[120px]">
+                        {c.recentDeviceName ?? <span className="text-faint">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 text-white/50 whitespace-nowrap text-xs">
+                      <td className="px-3 py-2.5 text-muted whitespace-nowrap text-xs">
                         {new Date(c.lastSeen).toLocaleString()}
                       </td>
-                      <td className="px-3 py-2.5 whitespace-nowrap">
+                      <td className="px-3 py-2.5 whitespace-nowrap text-right">
                         {total > 0 ? (
                           <div>
-                            <span className="text-white/80 font-medium">{formatBytes(total)}</span>
-                            <div className="flex gap-1.5 text-xs mt-0.5">
-                              <span className="text-blue-400">↓{formatBytes(c.usage.recv)}</span>
-                              <span className="text-green-400">↑{formatBytes(c.usage.sent)}</span>
+                            <span className="text-foreground-strong font-medium tabular-nums">{formatBytes(total)}</span>
+                            <div className="flex gap-1.5 text-xs mt-0.5 justify-end">
+                              <span className="text-info">↓{formatBytes(c.usage.recv)}</span>
+                              <span className="text-accent">↑{formatBytes(c.usage.sent)}</span>
                             </div>
                           </div>
                         ) : (
-                          <span className="text-white/20">—</span>
+                          <span className="text-faint">—</span>
                         )}
                       </td>
                     </tr>

@@ -30,17 +30,17 @@ function MetricRow({ label, valueA, valueB, higherIsBetter = true }: MetricRowPr
   const delta = valueA - valueB;
 
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-1.5 border-b border-white/5">
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-1.5 border-b border">
       <span
         className={cn(
           "text-sm font-medium text-right",
-          aIsBetter ? "text-green-400" : bIsBetter ? "text-red-400" : "text-white/70"
+          aIsBetter ? "text-green-400" : bIsBetter ? "text-red-400" : "text-foreground-muted"
         )}
       >
         {valueA}
       </span>
       <div className="text-center space-y-0.5">
-        <p className="text-xs text-white/40 leading-none">{label}</p>
+        <p className="text-xs text-muted leading-none">{label}</p>
         {delta !== 0 && (
           <p
             className={cn(
@@ -55,7 +55,7 @@ function MetricRow({ label, valueA, valueB, higherIsBetter = true }: MetricRowPr
       <span
         className={cn(
           "text-sm font-medium text-left",
-          bIsBetter ? "text-green-400" : aIsBetter ? "text-red-400" : "text-white/70"
+          bIsBetter ? "text-green-400" : aIsBetter ? "text-red-400" : "text-foreground-muted"
         )}
       >
         {valueB}
@@ -160,9 +160,9 @@ export function ComparePanel() {
 
   const selectClass = cn(
     "w-full px-3 py-2 rounded-lg text-sm",
-    "bg-white/5 border border-white/10",
+    "bg-overlay border",
     "focus:outline-none focus:ring-1 focus:ring-blue-500",
-    "text-white"
+    "text-foreground-strong"
   );
 
   const isLoadingNetworks = networksLoading && networks.length === 0;
@@ -172,7 +172,7 @@ export function ComparePanel() {
       {/* Network selectors */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white/70 block">Network A</label>
+          <label className="text-sm font-medium text-foreground-muted block">Network A</label>
           <select
             value={networkAId}
             onChange={(e) => {
@@ -191,7 +191,7 @@ export function ComparePanel() {
           </select>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white/70 block">Network B</label>
+          <label className="text-sm font-medium text-foreground-muted block">Network B</label>
           <select
             value={networkBId}
             onChange={(e) => {
@@ -213,21 +213,21 @@ export function ComparePanel() {
 
       {/* Comparison table */}
       {bothSelected && (
-        <div className="rounded-xl border border-white/10 overflow-hidden">
+        <div className="rounded-xl border overflow-hidden">
           {/* Header */}
           <div className="grid grid-cols-2">
             <div
               className={cn(
-                "p-4 text-center border-b border-white/10",
-                aIsHealthier ? "bg-green-500/10" : "bg-white/3"
+                "p-4 text-center border-b border",
+                aIsHealthier ? "bg-green-500/10" : "bg-overlay"
               )}
             >
-              <p className="font-semibold text-sm text-white">{networkA?.name}</p>
+              <p className="font-semibold text-sm text-foreground-strong">{networkA?.name}</p>
               {loadingA && (
-                <Loader2 size={14} className="animate-spin text-white/40 mx-auto mt-1" />
+                <Loader2 size={14} className="animate-spin text-muted mx-auto mt-1" />
               )}
               {scoreA !== null && !loadingA && (
-                <p className={cn("text-2xl font-bold mt-1", aIsHealthier ? "text-green-400" : bIsHealthier ? "text-red-400" : "text-white")}>
+                <p className={cn("text-2xl font-bold mt-1", aIsHealthier ? "text-green-400" : bIsHealthier ? "text-red-400" : "text-foreground-strong")}>
                   {scoreA}%
                 </p>
               )}
@@ -237,16 +237,16 @@ export function ComparePanel() {
             </div>
             <div
               className={cn(
-                "p-4 text-center border-b border-l border-white/10",
-                bIsHealthier ? "bg-green-500/10" : "bg-white/3"
+                "p-4 text-center border-b border-l border",
+                bIsHealthier ? "bg-green-500/10" : "bg-overlay"
               )}
             >
-              <p className="font-semibold text-sm text-white">{networkB?.name}</p>
+              <p className="font-semibold text-sm text-foreground-strong">{networkB?.name}</p>
               {loadingB && (
-                <Loader2 size={14} className="animate-spin text-white/40 mx-auto mt-1" />
+                <Loader2 size={14} className="animate-spin text-muted mx-auto mt-1" />
               )}
               {scoreB !== null && !loadingB && (
-                <p className={cn("text-2xl font-bold mt-1", bIsHealthier ? "text-green-400" : aIsHealthier ? "text-red-400" : "text-white")}>
+                <p className={cn("text-2xl font-bold mt-1", bIsHealthier ? "text-green-400" : aIsHealthier ? "text-red-400" : "text-foreground-strong")}>
                   {scoreB}%
                 </p>
               )}
@@ -276,7 +276,7 @@ export function ComparePanel() {
           <button
             onClick={() => { void handleAiCompare(); }}
             disabled={analyzing}
-            className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2"
+            className="px-5 py-2 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2"
           >
             {analyzing && <Loader2 size={14} className="animate-spin" />}
             {analyzing ? "Analyzing…" : "AI Compare"}
@@ -287,7 +287,7 @@ export function ComparePanel() {
           )}
 
           {analysis && (
-            <div className="rounded-xl border border-white/10 p-5">
+            <div className="rounded-xl border p-5">
               <MarkdownOutput content={analysis} />
             </div>
           )}

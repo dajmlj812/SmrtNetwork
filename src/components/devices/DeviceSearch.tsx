@@ -20,19 +20,19 @@ export function DeviceSearch({ onSearch }: Props) {
       <div className="relative flex-1">
         <Search
           size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
         />
         <input
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="Search by MAC address or IP (e.g. aa:bb:cc:dd:ee:ff or 10.0.0.1)"
-          className="w-full pl-9 pr-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full pl-9 pr-4 py-2 rounded-lg bg-overlay border text-sm placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
       </div>
       <button
         type="submit"
-        className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm transition-colors"
+        className="px-4 py-2 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover text-sm transition-colors"
       >
         Search
       </button>

@@ -130,13 +130,13 @@ export function ReportButton() {
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      {/* Org-wide HTML */}
+      {/* Org-wide HTML — primary */}
       <button
         onClick={handleGenerate}
         disabled={busy}
         className={cn(
           "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-          "bg-white/10 hover:bg-white/15 disabled:opacity-50"
+          "bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-50"
         )}
       >
         {loading ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
@@ -149,7 +149,7 @@ export function ReportButton() {
         disabled={busy}
         className={cn(
           "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-          "bg-white/8 hover:bg-white/12 disabled:opacity-50 text-white/70"
+          "border text-foreground-muted hover:text-foreground-strong hover:bg-overlay-strong disabled:opacity-50"
         )}
       >
         {loadingPdf ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />}
@@ -163,7 +163,7 @@ export function ReportButton() {
           disabled={busy}
           className={cn(
             "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-            "bg-[#1e9c4a]/10 hover:bg-[#1e9c4a]/20 text-[#30ba67] border border-[#1e9c4a]/30 disabled:opacity-50"
+            "bg-accent-soft text-accent border border-accent/30 hover:bg-accent/20 disabled:opacity-50"
           )}
         >
           {loadingNet ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
@@ -178,7 +178,7 @@ export function ReportButton() {
           disabled={busy}
           className={cn(
             "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors",
-            "text-white/40 hover:text-white/70 hover:bg-white/5 disabled:opacity-50"
+            "text-muted hover:text-foreground-strong hover:bg-overlay-strong disabled:opacity-50"
           )}
           title="Report history"
         >
@@ -187,12 +187,12 @@ export function ReportButton() {
         </button>
 
         {showHistory && (
-          <div className="absolute right-0 top-full mt-1 z-50 w-72 rounded-xl border border-white/10 bg-[#131728] shadow-xl p-2 space-y-0.5">
-            <p className="text-[10px] text-white/30 uppercase tracking-wider px-2 py-1">
+          <div className="absolute right-0 top-full mt-1 z-50 w-72 rounded-xl border bg-card shadow-xl p-2 space-y-0.5">
+            <p className="text-[10px] text-faint uppercase tracking-wider px-2 py-1 font-semibold">
               Report History (last 15)
             </p>
             {history.length === 0 && (
-              <p className="text-xs text-white/40 px-2 py-2">No reports generated yet.</p>
+              <p className="text-xs text-muted px-2 py-2">No reports generated yet.</p>
             )}
             {history.map((r) => (
               <a
@@ -200,16 +200,16 @@ export function ReportButton() {
                 href={`/api/report/history?id=${r.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between gap-2 px-2 py-2 rounded-lg hover:bg-white/5 group"
+                className="flex items-center justify-between gap-2 px-2 py-2 rounded-lg hover:bg-overlay-strong group"
                 onClick={() => setShowHistory(false)}
               >
                 <div className="min-w-0">
-                  <p className="text-xs text-white/80 truncate">{r.title}</p>
-                  <p className="text-[10px] text-white/30 font-mono">
+                  <p className="text-xs text-foreground truncate">{r.title}</p>
+                  <p className="text-[10px] text-faint font-mono">
                     {new Date(r.generatedAt).toLocaleString()}
                   </p>
                 </div>
-                <ExternalLink size={11} className="text-white/20 group-hover:text-white/50 shrink-0" />
+                <ExternalLink size={11} className="text-faint group-hover:text-foreground-muted shrink-0" />
               </a>
             ))}
           </div>
@@ -218,22 +218,22 @@ export function ReportButton() {
 
       {/* Status messages */}
       {!smtpConfigured && !busy && (
-        <span className="text-xs text-white/30 hidden lg:block">
+        <span className="text-xs text-faint hidden lg:block">
           Configure SMTP to email reports
         </span>
       )}
       {emailSent && (
-        <span className="flex items-center gap-1.5 text-sm text-green-400">
+        <span className="flex items-center gap-1.5 text-sm text-accent">
           <Mail size={14} /> Email sent
         </span>
       )}
       {error && (
-        <span className="flex items-center gap-1.5 text-sm text-red-400">
+        <span className="flex items-center gap-1.5 text-sm text-red-500 dark:text-red-400">
           <AlertCircle size={14} /> {error}
         </span>
       )}
       {!busy && !error && !emailSent && smtpConfigured && (
-        <span className="flex items-center gap-1 text-xs text-white/40">
+        <span className="flex items-center gap-1 text-xs text-muted">
           <CheckCircle size={12} /> Will email on Org Report
         </span>
       )}

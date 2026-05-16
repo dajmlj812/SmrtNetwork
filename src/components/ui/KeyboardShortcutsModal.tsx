@@ -34,10 +34,10 @@ export function KeyboardShortcutsModal() {
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 w-full max-w-sm shadow-2xl">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-white">Keyboard Shortcuts</h2>
+          <h2 className="font-semibold text-foreground-strong">Keyboard Shortcuts</h2>
           <button
             onClick={() => setOpen(false)}
-            className="text-white/40 hover:text-white/70 transition-colors"
+            className="text-muted hover:text-foreground-muted transition-colors"
             aria-label="Close"
           >
             <X size={16} />
@@ -48,16 +48,16 @@ export function KeyboardShortcutsModal() {
             {SHORTCUTS.map((s) => (
               <tr key={s.key}>
                 <td className="py-2.5 pr-4 w-28">
-                  <kbd className="inline-block px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono text-white/70">
+                  <kbd className="inline-block px-2 py-0.5 rounded bg-overlay-strong border border-strong text-xs font-mono text-foreground-muted">
                     {s.key}
                   </kbd>
                 </td>
-                <td className="py-2.5 text-white/60">{s.description}</td>
+                <td className="py-2.5 text-foreground-muted">{s.description}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <p className="text-xs text-white/30 mt-4">Press <kbd className="px-1 rounded bg-white/10 border border-white/20 font-mono">?</kbd> to toggle this panel.</p>
+        <p className="text-xs text-faint mt-4">Press <kbd className="px-1 rounded bg-overlay-strong border border-strong font-mono">?</kbd> to toggle this panel.</p>
       </div>
     </div>
   );

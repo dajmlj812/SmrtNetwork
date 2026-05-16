@@ -32,61 +32,69 @@ export function ClientTrendChart() {
     staleTime: 5 * 60_000,
   });
 
-  if (!selectedNetwork || isLoading) return null;
+  if (!selectedNetwork) return null;
 
   const chartData = (snapshots ?? []).map((s) => ({
     time: formatTime(s.capturedAt),
     clients: s.stats.clientCount,
   }));
 
-  // Don't render if all counts are 0 — poller hasn't collected data yet
   const hasData = chartData.some((d) => d.clients > 0);
-  if (!hasData) return null;
 
   return (
-    <div className="rounded-xl border border-white/10 p-5 space-y-3">
-      <div>
-        <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">
-          Connected Clients — 24h Trend
-        </h2>
-        <p className="text-xs text-white/30 mt-0.5">Active clients seen in the last 5 min, polled every 5 min</p>
-      </div>
-      <ResponsiveContainer width="100%" height={160}>
-        <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-          <XAxis
-            dataKey="time"
-            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-            interval="preserveStartEnd"
-          />
-          <YAxis
-            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-            allowDecimals={false}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "rgba(0,0,0,0.8)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: "8px",
-              color: "rgba(255,255,255,0.8)",
-              fontSize: "12px",
-            }}
-            formatter={(v) => [v, "Clients"]}
-          />
-          <Line
-            type="monotone"
-            dataKey="clients"
-            name="Clients"
-            stroke="#1e9c4a"
-            strokeWidth={2}
-            dot={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+    <div className="space-y-3">
+      <p className="text-xs text-muted">Connected clients · last 24h · polled every 5 min</p>
+
+      {isLoading && (
+        <div className="h-[160px] flex items-center justify-center">
+          <div className="h-4 w-32 bg-overlay-strong rounded animate-pulse" />
+        </div>
+      )}
+
+      {!isLoading && !hasData && (
+        <p className="text-sm text-muted py-8 text-center">
+          No client history yet — data appears after the poller runs.
+        </p>
+      )}
+
+      {!isLoading && hasData && (
+        <ResponsiveContainer width="100%" height={160}>
+          <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+            <XAxis
+              dataKey="time"
+              tick={{ fill: "var(--faint)", fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              tick={{ fill: "var(--faint)", fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+              allowDecimals={false}
+            />
+            <Tooltip
+              contentStyle={{
+                background: "var(--tooltip-bg)",
+                border: "1px solid var(--border)",
+                borderRadius: "8px",
+                color: "var(--tooltip-fg)",
+                fontSize: "12px",
+              }}
+              formatter={(v) => [v, "Clients"]}
+            />
+            <Line
+              type="monotone"
+              dataKey="clients"
+              name="Clients"
+              stroke="var(--accent)"
+              strokeWidth={2}
+              dot={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }

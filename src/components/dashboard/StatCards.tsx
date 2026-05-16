@@ -19,32 +19,39 @@ interface StatCardProps {
   label: string;
   value: number | string;
   icon: React.ElementType;
-  colorClass?: string;
+  tone?: "neutral" | "good" | "bad";
   loading?: boolean;
   trend?: React.ReactNode;
 }
 
-function StatCard({ label, value, icon: Icon, colorClass, loading, trend }: StatCardProps) {
+const TONE: Record<NonNullable<StatCardProps["tone"]>, { bg: string; fg: string }> = {
+  neutral: { bg: "bg-overlay-strong", fg: "text-muted" },
+  good:    { bg: "bg-accent-soft",    fg: "text-accent" },
+  bad:     { bg: "bg-red-500/15",     fg: "text-red-500 dark:text-red-400" },
+};
+
+function StatCard({ label, value, icon: Icon, tone = "neutral", loading, trend }: StatCardProps) {
   if (loading) {
     return (
-      <div className="rounded-xl border border-white/10 p-5 space-y-2">
-        <div className="h-8 w-16 bg-white/10 rounded animate-pulse" />
-        <div className="h-4 w-24 bg-white/5 rounded animate-pulse" />
+      <div className="rounded-xl border bg-card p-5 space-y-2">
+        <div className="h-8 w-16 bg-overlay-strong rounded animate-pulse" />
+        <div className="h-3 w-24 bg-overlay rounded animate-pulse" />
       </div>
     );
   }
 
+  const t = TONE[tone];
   return (
-    <div className="rounded-xl border border-white/10 p-5 flex items-center gap-4">
-      <div className={cn("p-2 rounded-lg", colorClass ?? "bg-white/5")}>
-        <Icon size={20} className={cn(colorClass ? "text-white" : "text-white/50")} />
+    <div className="rounded-xl border bg-card p-5 flex items-center gap-4">
+      <div className={cn("p-2.5 rounded-lg", t.bg)}>
+        <Icon size={20} className={t.fg} />
       </div>
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
-          <p className="text-2xl font-bold text-white">{value}</p>
+          <p className="text-2xl font-bold text-foreground-strong tabular-nums">{value}</p>
           {trend}
         </div>
-        <p className="text-xs text-white/50 mt-0.5">{label}</p>
+        <p className="text-xs text-muted mt-0.5">{label}</p>
       </div>
     </div>
   );
@@ -52,23 +59,19 @@ function StatCard({ label, value, icon: Icon, colorClass, loading, trend }: Stat
 
 function TrendIndicator({ current, previous }: { current: number; previous: number | null }) {
   if (previous === null) {
-    return <span className="text-xs text-white/40">—</span>;
+    return <span className="text-xs text-faint">—</span>;
   }
   const delta = current - previous;
   if (delta === 0) {
-    return <span className="text-xs text-white/40">—</span>;
+    return <span className="text-xs text-faint">—</span>;
   }
   if (delta > 0) {
     return (
-      <span className="text-xs font-medium text-green-400">
-        ↑ +{delta}
-      </span>
+      <span className="text-xs font-medium text-accent">↑ +{delta}</span>
     );
   }
   return (
-    <span className="text-xs font-medium text-red-400">
-      ↓ {delta}
-    </span>
+    <span className="text-xs font-medium text-red-500 dark:text-red-400">↓ {delta}</span>
   );
 }
 
@@ -111,7 +114,6 @@ export function StatCards() {
   const offlineAlerting = (data?.offline ?? 0) + (data?.alerting ?? 0);
   const hasProblems = offlineAlerting > 0;
 
-  // Previous snapshot is the second-to-last (index 0 when we have 2)
   const previousOnline =
     snapshots && snapshots.length >= 2
       ? snapshots[snapshots.length - 2].stats.online
@@ -130,7 +132,7 @@ export function StatCards() {
         label="Online"
         value={data?.online ?? 0}
         icon={CheckCircle}
-        colorClass={data && data.online > 0 ? "bg-green-500/20" : undefined}
+        tone={data && data.online > 0 ? "good" : "neutral"}
         loading={isLoading}
         trend={
           !isLoading && currentOnline !== null ? (
@@ -142,7 +144,7 @@ export function StatCards() {
         label="Offline / Alerting"
         value={offlineAlerting}
         icon={AlertTriangle}
-        colorClass={hasProblems ? "bg-red-500/20" : "bg-green-500/20"}
+        tone={hasProblems ? "bad" : "good"}
         loading={isLoading}
       />
       <StatCard

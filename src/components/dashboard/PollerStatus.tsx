@@ -29,11 +29,11 @@ export function PollerStatus() {
   let message: React.ReactNode;
 
   if (data.enabled && data.smtpConfigured) {
-    dotColor = "bg-green-500";
+    dotColor = "bg-accent";
     message = (
       <>
         Monitoring active — alerts below{" "}
-        <span className="font-semibold text-white">{data.threshold}%</span> health
+        <span className="font-semibold text-foreground-strong">{data.threshold}%</span> health
       </>
     );
   } else if (data.enabled && !data.smtpConfigured) {
@@ -41,18 +41,18 @@ export function PollerStatus() {
     message = (
       <>
         Monitoring active —{" "}
-        <Link href="/settings" className="underline underline-offset-2 hover:text-white transition-colors">
+        <Link href="/settings" className="text-accent underline underline-offset-2 hover:text-accent-hover transition-colors">
           configure SMTP in Settings
         </Link>{" "}
         to receive alerts
       </>
     );
   } else {
-    dotColor = "bg-white/30";
+    dotColor = "bg-faint";
     message = (
       <>
         Monitoring disabled —{" "}
-        <Link href="/settings" className="underline underline-offset-2 hover:text-white transition-colors">
+        <Link href="/settings" className="text-accent underline underline-offset-2 hover:text-accent-hover transition-colors">
           enable in Settings
         </Link>
       </>
@@ -60,8 +60,8 @@ export function PollerStatus() {
   }
 
   return (
-    <div className="flex items-center gap-2 text-sm text-white/50">
-      <span className={cn("w-2 h-2 rounded-full flex-shrink-0", dotColor)} />
+    <div className="flex items-center gap-2 text-xs text-muted mt-1">
+      <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", dotColor)} />
       <span>{message}</span>
     </div>
   );

@@ -25,7 +25,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="rounded-lg p-1.5 text-white/40 hover:text-white/70 transition-colors"
+      className="rounded-lg p-1.5 text-muted hover:text-foreground-strong hover:bg-overlay-strong transition-colors"
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
       {isDark ? <Sun size={16} /> : <Moon size={16} />}

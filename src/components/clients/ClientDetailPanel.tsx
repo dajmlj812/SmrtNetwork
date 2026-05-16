@@ -18,8 +18,8 @@ function InfoRow({ label, value, mono = false }: { label: string; value?: string
   if (!value) return null;
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-xs text-white/40 uppercase tracking-wider">{label}</span>
-      <span className={cn("text-sm text-white/80 break-all", mono && "font-mono text-xs")}>{value}</span>
+      <span className="text-xs text-muted uppercase tracking-wider">{label}</span>
+      <span className={cn("text-sm text-foreground break-all", mono && "font-mono text-xs")}>{value}</span>
     </div>
   );
 }
@@ -151,26 +151,26 @@ export function ClientDetailPanel({ client, onClose }: ClientDetailPanelProps) {
         <div className="flex items-start justify-between gap-3 p-5 border-b border-[var(--border)] shrink-0">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="font-semibold text-white truncate">{label}</h2>
+              <h2 className="font-semibold text-foreground-strong truncate">{label}</h2>
               <span className={cn(
                 "inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border shrink-0",
                 isActive
-                  ? "bg-[#1e9c4a]/15 text-[#30ba67] border-[#1e9c4a]/30"
-                  : "bg-white/5 text-white/30 border-white/10"
+                  ? "bg-accent-soft text-accent border-accent/30"
+                  : "bg-overlay text-faint border"
               )}>
-                <span className={cn("w-1.5 h-1.5 rounded-full", isActive ? "bg-[#30ba67]" : "bg-white/20")} />
+                <span className={cn("w-1.5 h-1.5 rounded-full", isActive ? "bg-accent" : "bg-overlay-strong")} />
                 {isActive ? "Active" : "Inactive"}
               </span>
             </div>
             {client && (
-              <p className="text-xs text-white/40 mt-0.5">
+              <p className="text-xs text-muted mt-0.5">
                 Last seen: {new Date(client.lastSeen).toLocaleString()}
               </p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-white/40 hover:text-white/70 transition-colors shrink-0"
+            className="rounded-lg p-1.5 text-muted hover:text-foreground-muted transition-colors shrink-0"
             aria-label="Close panel"
           >
             <X size={18} />
@@ -201,7 +201,7 @@ export function ClientDetailPanel({ client, onClose }: ClientDetailPanelProps) {
             <>
               {/* Info grid */}
               <section>
-                <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">
+                <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">
                   Device Info
                 </h3>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3">
@@ -220,13 +220,13 @@ export function ClientDetailPanel({ client, onClose }: ClientDetailPanelProps) {
 
               {/* Usage card */}
               <section>
-                <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">
+                <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">
                   Usage
                 </h3>
                 <div className="rounded-xl border border-[var(--border)] p-4 space-y-3">
                   <div className="flex items-baseline justify-between">
-                    <span className="text-xs text-white/40">Total</span>
-                    <span className="text-lg font-semibold text-white/90">
+                    <span className="text-xs text-muted">Total</span>
+                    <span className="text-lg font-semibold text-foreground">
                       {total > 0 ? formatBytes(total) : "—"}
                     </span>
                   </div>
@@ -235,12 +235,12 @@ export function ClientDetailPanel({ client, onClose }: ClientDetailPanelProps) {
                       <div className="flex items-center gap-1.5">
                         <Download size={14} className="text-blue-400" />
                         <span className="text-sm text-blue-400">{formatBytes(client.usage.recv)}</span>
-                        <span className="text-xs text-white/30">down</span>
+                        <span className="text-xs text-faint">down</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Upload size={14} className="text-green-400" />
                         <span className="text-sm text-green-400">{formatBytes(client.usage.sent)}</span>
-                        <span className="text-xs text-white/30">up</span>
+                        <span className="text-xs text-faint">up</span>
                       </div>
                     </div>
                   )}
@@ -250,14 +250,14 @@ export function ClientDetailPanel({ client, onClose }: ClientDetailPanelProps) {
               {/* Tags */}
               <section>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider flex items-center gap-1.5">
+                  <h3 className="text-xs font-semibold text-muted uppercase tracking-wider flex items-center gap-1.5">
                     <Tag size={11} /> Label
                   </h3>
                   {!tagEditing && (
                     <button
                       type="button"
                       onClick={() => setTagEditing(true)}
-                      className="text-xs text-white/30 hover:text-white/60 transition-colors"
+                      className="text-xs text-faint hover:text-foreground-muted transition-colors"
                     >
                       {tag ? "Edit" : "Add label"}
                     </button>
@@ -273,29 +273,29 @@ export function ClientDetailPanel({ client, onClose }: ClientDetailPanelProps) {
                   </div>
                 )}
                 {!tagEditing && !tag && (
-                  <p className="text-xs text-white/30 italic">No label — click &ldquo;Add label&rdquo; to tag this client.</p>
+                  <p className="text-xs text-faint italic">No label — click &ldquo;Add label&rdquo; to tag this client.</p>
                 )}
                 {tagEditing && (
                   <div className="space-y-2">
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="text-xs text-white/40 block mb-1">Label</label>
+                        <label className="text-xs text-muted block mb-1">Label</label>
                         <input
                           type="text"
                           value={tagLabel}
                           onChange={(e) => setTagLabel(e.target.value)}
                           placeholder="e.g. Printer, iPad, POS"
-                          className="w-full px-2.5 py-1.5 rounded-lg text-sm bg-white/5 border border-white/10 placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="w-full px-2.5 py-1.5 rounded-lg text-sm bg-overlay border placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                       </div>
                       <div>
-                        <label className="text-xs text-white/40 block mb-1">Group (opt)</label>
+                        <label className="text-xs text-muted block mb-1">Group (opt)</label>
                         <input
                           type="text"
                           value={tagGroup}
                           onChange={(e) => setTagGroup(e.target.value)}
                           placeholder="e.g. Floor 2, Warehouse"
-                          className="w-full px-2.5 py-1.5 rounded-lg text-sm bg-white/5 border border-white/10 placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="w-full px-2.5 py-1.5 rounded-lg text-sm bg-overlay border placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                       </div>
                     </div>
@@ -304,14 +304,14 @@ export function ClientDetailPanel({ client, onClose }: ClientDetailPanelProps) {
                         type="button"
                         onClick={handleSaveTag}
                         disabled={savingTag || !tagLabel.trim()}
-                        className="px-3 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-xs font-medium transition-colors"
+                        className="px-3 py-1.5 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 text-xs font-medium transition-colors"
                       >
                         {savingTag ? "Saving…" : "Save"}
                       </button>
                       <button
                         type="button"
                         onClick={() => { setTagEditing(false); if (tag) { setTagLabel(tag.label); setTagGroup(tag.group ?? ""); } }}
-                        className="px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 text-xs transition-colors"
+                        className="px-3 py-1.5 rounded-lg border border-strong hover:border-strong text-xs transition-colors"
                       >
                         Cancel
                       </button>
@@ -332,21 +332,21 @@ export function ClientDetailPanel({ client, onClose }: ClientDetailPanelProps) {
 
               {/* AI Analysis */}
               <section>
-                <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">
+                <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">
                   AI Analysis
                 </h3>
                 {!analysis && !analyzing && (
                   <button
                     onClick={handleAnalyze}
                     disabled={!selectedNetwork}
-                    className="w-full rounded-lg px-4 py-2.5 text-sm font-medium bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors"
+                    className="w-full rounded-lg px-4 py-2.5 text-sm font-medium bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed text-foreground-strong transition-colors"
                   >
                     Analyze Client
                   </button>
                 )}
                 {analyzing && (
-                  <div className="flex items-center gap-2 text-sm text-white/40 py-2">
-                    <span className="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-[#30ba67] rounded-full" />
+                  <div className="flex items-center gap-2 text-sm text-muted py-2">
+                    <span className="animate-spin inline-block w-4 h-4 border-2 border-strong border-t-accent rounded-full" />
                     Analyzing…
                   </div>
                 )}
@@ -356,11 +356,11 @@ export function ClientDetailPanel({ client, onClose }: ClientDetailPanelProps) {
                   </div>
                 )}
                 {analysis && (
-                  <div className="rounded-xl border border-[var(--border)] bg-white/3 p-4">
+                  <div className="rounded-xl border border-[var(--border)] bg-overlay p-4">
                     <MarkdownOutput content={analysis} />
                     <button
                       onClick={handleAnalyze}
-                      className="mt-3 text-xs text-[#1e9c4a]/60 hover:text-[#30ba67] transition-colors"
+                      className="mt-3 text-xs text-accent/70 hover:text-accent transition-colors"
                     >
                       Re-analyze
                     </button>

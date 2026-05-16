@@ -7,12 +7,12 @@ import type { BandwidthPeriod } from "@/app/api/meraki/bandwidth/route";
 
 function SkeletonCard() {
   return (
-    <div className="rounded-xl border border-white/10 p-4 space-y-2 animate-pulse">
-      <div className="h-3 w-20 bg-white/10 rounded" />
-      <div className="h-6 w-28 bg-white/10 rounded" />
-      <div className="h-3 w-24 bg-white/5 rounded" />
-      <div className="h-3 w-24 bg-white/5 rounded" />
-      <div className="h-3 w-16 bg-white/5 rounded" />
+    <div className="rounded-xl border p-4 space-y-2 animate-pulse">
+      <div className="h-3 w-20 bg-overlay-strong rounded" />
+      <div className="h-6 w-28 bg-overlay-strong rounded" />
+      <div className="h-3 w-24 bg-overlay rounded" />
+      <div className="h-3 w-24 bg-overlay rounded" />
+      <div className="h-3 w-16 bg-overlay rounded" />
     </div>
   );
 }
@@ -25,9 +25,9 @@ function BandwidthCard({
   isAboveAverage: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 p-4 space-y-2">
+    <div className="rounded-xl border p-4 space-y-2">
       <div className="flex items-center gap-2">
-        <p className="font-semibold text-sm text-white">{period.label}</p>
+        <p className="font-semibold text-sm text-foreground-strong">{period.label}</p>
         {isAboveAverage && (
           <span
             className="inline-block w-2 h-2 rounded-full bg-yellow-400 shrink-0"
@@ -35,7 +35,7 @@ function BandwidthCard({
           />
         )}
       </div>
-      <p className="text-2xl font-bold text-white">{formatBytes(period.total)}</p>
+      <p className="text-2xl font-bold text-foreground-strong">{formatBytes(period.total)}</p>
       <div className="space-y-0.5">
         <p className="text-xs text-blue-400">
           ↓ {formatBytes(period.recv)}
@@ -44,7 +44,7 @@ function BandwidthCard({
           ↑ {formatBytes(period.sent)}
         </p>
       </div>
-      <p className="text-xs text-white/40">{period.clients} clients</p>
+      <p className="text-xs text-muted">{period.clients} clients</p>
     </div>
   );
 }
@@ -89,8 +89,8 @@ export function BandwidthSummary() {
     data.every((p) => p.total === 0 && p.clients === 0);
 
   return (
-    <div className="rounded-xl border border-white/10 p-5 space-y-4">
-      <h2 className="font-semibold text-white">Bandwidth by Time Window</h2>
+    <div className="rounded-xl border p-5 space-y-4">
+      <h2 className="font-semibold text-foreground-strong">Bandwidth by Time Window</h2>
 
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -100,7 +100,7 @@ export function BandwidthSummary() {
           <SkeletonCard />
         </div>
       ) : allZero ? (
-        <p className="text-sm text-white/40">
+        <p className="text-sm text-muted">
           No bandwidth data available for this network.
         </p>
       ) : (

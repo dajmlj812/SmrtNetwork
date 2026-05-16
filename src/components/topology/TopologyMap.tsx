@@ -49,7 +49,7 @@ function UplinkSparkline({ serial }: { serial: string }) {
   const hasData = history.length > 1;
 
   if (isLoading) {
-    return <div className="h-8 mt-2 rounded bg-white/5 animate-pulse" />;
+    return <div className="h-8 mt-2 rounded bg-overlay animate-pulse" />;
   }
 
   if (!hasData) return null;
@@ -76,8 +76,8 @@ function UplinkSparkline({ serial }: { serial: string }) {
   const avgLatency = (latencyValues.reduce((a, b) => a + b, 0) / latencyValues.length).toFixed(0);
 
   return (
-    <div className="mt-2 pt-2 border-t border-white/10 space-y-1">
-      <p className="text-[10px] text-white/30 uppercase tracking-wider">WAN1 · 1h</p>
+    <div className="mt-2 pt-2 border-t space-y-1">
+      <p className="text-[10px] text-faint uppercase tracking-wider">WAN1 · 1h</p>
       <svg width={W} height={H} className="overflow-visible">
         <path d={toPath(latencyValues, maxLatency)} fill="none" stroke="#3b82f6" strokeWidth={1.2} />
         <path d={toPath(lossValues, maxLoss)} fill="none" stroke="#ef4444" strokeWidth={1.2} />
@@ -97,17 +97,17 @@ function DeviceHoverCard({
 }) {
   const isAppliance = device.model.startsWith("MX") || device.model.startsWith("Z");
   return (
-    <div className="absolute top-3 right-3 rounded-xl border border-white/10 bg-[#131728]/95 backdrop-blur p-3 text-xs space-y-1 min-w-44 pointer-events-none">
-      <p className="font-semibold text-white truncate">
+    <div className="absolute top-3 right-3 rounded-xl border bg-[#131728]/95 backdrop-blur p-3 text-xs space-y-1 min-w-44 pointer-events-none">
+      <p className="font-semibold text-foreground-strong truncate">
         {device.name || device.serial}
       </p>
-      <p className="text-white/50">{device.model}</p>
-      <p className="text-white/35 font-mono">{device.serial}</p>
+      <p className="text-muted">{device.model}</p>
+      <p className="text-foreground-strong/35 font-mono">{device.serial}</p>
       {device.lanIp && (
-        <p className="text-white/40">LAN: {device.lanIp}</p>
+        <p className="text-muted">LAN: {device.lanIp}</p>
       )}
       {device.wan1Ip && (
-        <p className="text-white/40">WAN: {device.wan1Ip}</p>
+        <p className="text-muted">WAN: {device.wan1Ip}</p>
       )}
       <p
         className="capitalize font-medium"
@@ -164,7 +164,7 @@ export function TopologyMap() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 text-white/40 text-sm animate-pulse">
+      <div className="flex items-center justify-center h-64 text-muted text-sm animate-pulse">
         Loading topology…
       </div>
     );
@@ -172,7 +172,7 @@ export function TopologyMap() {
 
   if (error || !devices || devices.length === 0) {
     return (
-      <div className="rounded-xl border border-white/10 p-8 flex items-center justify-center text-white/40 text-sm">
+      <div className="rounded-xl border p-8 flex items-center justify-center text-muted text-sm">
         No devices found in this network
       </div>
     );
@@ -242,20 +242,20 @@ export function TopologyMap() {
       {/* Summary chips */}
       <div className="flex items-center gap-3 flex-wrap">
         {LEGEND_ITEMS.map(([status, label]) => (
-          <span key={status} className="flex items-center gap-1.5 text-xs text-white/50">
+          <span key={status} className="flex items-center gap-1.5 text-xs text-muted">
             <span
               className="inline-block w-2.5 h-2.5 rounded-full"
               style={{ backgroundColor: STATUS_COLOR[status] }}
             />
             {label}
-            <span className="text-white/30 font-mono">{counts[status as keyof typeof counts]}</span>
+            <span className="text-faint font-mono">{counts[status as keyof typeof counts]}</span>
           </span>
         ))}
-        <span className="ml-auto text-xs text-white/30">{devices.length} devices</span>
+        <span className="ml-auto text-xs text-faint">{devices.length} devices</span>
       </div>
 
       {/* SVG canvas */}
-      <div className="relative overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02]">
+      <div className="relative overflow-x-auto rounded-xl border bg-overlay">
         <svg width={canvasWidth} height={canvasHeight} className="block">
           {/* Layer labels on left */}
           {layers.map((layer, li) => {

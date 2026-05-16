@@ -227,13 +227,13 @@ export function GlobalSearch() {
 
       {/* Modal card */}
       <div
-        className="relative max-w-lg w-full mx-4 rounded-xl bg-[var(--card)] border border-[var(--border)] shadow-2xl overflow-hidden"
+        className="relative max-w-lg w-full mx-4 rounded-xl bg-card border shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleModalKeyDown}
       >
         {/* Search input row */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border)]">
-          <Search size={16} className="text-white/40 shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-3 border-b">
+          <Search size={16} className="text-muted shrink-0" />
           <input
             ref={inputRef}
             value={query}
@@ -242,18 +242,18 @@ export function GlobalSearch() {
               setSelectedIndex(0);
             }}
             placeholder="Search networks, devices, clients…"
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-white/30"
+            className="flex-1 bg-transparent text-sm text-foreground-strong outline-none placeholder:text-faint"
           />
           {apiLoading && (
-            <Loader2 size={14} className="animate-spin text-white/40 shrink-0" />
+            <Loader2 size={14} className="animate-spin text-muted shrink-0" />
           )}
           <button
             onClick={() => setOpen(false)}
-            className="text-white/30 hover:text-white/60 transition-colors"
+            className="text-faint hover:text-foreground-strong transition-colors"
           >
             <X size={14} />
           </button>
-          <kbd className="text-[10px] text-white/25 font-mono border border-white/10 rounded px-1 py-0.5 leading-none">
+          <kbd className="text-[10px] text-faint font-mono border rounded px-1 py-0.5 leading-none">
             Esc
           </kbd>
         </div>
@@ -262,13 +262,13 @@ export function GlobalSearch() {
         {query.length >= 1 ? (
           <div className="max-h-[400px] overflow-y-auto py-2">
             {flat.length === 0 && !apiLoading && (
-              <p className="text-sm text-white/30 text-center py-6">No results found</p>
+              <p className="text-sm text-muted text-center py-6">No results found</p>
             )}
 
             {/* Networks group */}
             {networkCount > 0 && (
               <div>
-                <p className="text-[10px] text-white/30 uppercase tracking-wider px-4 py-1 font-medium">
+                <p className="text-[10px] text-faint uppercase tracking-wider px-4 py-1 font-semibold">
                   Networks
                 </p>
                 {networkMatches.slice(0, 8).map((n) => {
@@ -283,11 +283,11 @@ export function GlobalSearch() {
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-2 text-sm text-left transition-colors",
                         isSelected
-                          ? "bg-white/8 text-white"
-                          : "text-white/60 hover:text-white"
+                          ? "bg-accent-soft text-foreground-strong"
+                          : "text-foreground-muted hover:text-foreground-strong"
                       )}
                     >
-                      <Network size={14} className="shrink-0 text-blue-400" />
+                      <Network size={14} className="shrink-0 text-info" />
                       <span className="truncate">{n.name}</span>
                     </button>
                   );
@@ -298,7 +298,7 @@ export function GlobalSearch() {
             {/* Devices group */}
             {deviceResults.length > 0 && (
               <div>
-                <p className="text-[10px] text-white/30 uppercase tracking-wider px-4 py-1 font-medium">
+                <p className="text-[10px] text-faint uppercase tracking-wider px-4 py-1 font-semibold">
                   Devices
                 </p>
                 {deviceResults.map((r) => {
@@ -318,14 +318,14 @@ export function GlobalSearch() {
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-2 text-sm text-left transition-colors",
                         isSelected
-                          ? "bg-white/8 text-white"
-                          : "text-white/60 hover:text-white"
+                          ? "bg-accent-soft text-foreground-strong"
+                          : "text-foreground-muted hover:text-foreground-strong"
                       )}
                     >
-                      <Monitor size={14} className="shrink-0 text-purple-400" />
+                      <Monitor size={14} className="shrink-0 text-accent" />
                       <div className="min-w-0">
                         <p className="truncate">{r.data.name ?? r.data.serial}</p>
-                        <p className="text-xs text-white/30 truncate">
+                        <p className="text-xs text-faint truncate font-mono">
                           {r.data.model} · {r.data.mac}
                         </p>
                       </div>
@@ -338,7 +338,7 @@ export function GlobalSearch() {
             {/* Clients group */}
             {clientResults.length > 0 && (
               <div>
-                <p className="text-[10px] text-white/30 uppercase tracking-wider px-4 py-1 font-medium">
+                <p className="text-[10px] text-faint uppercase tracking-wider px-4 py-1 font-semibold">
                   Clients
                 </p>
                 {clientResults.map((r) => {
@@ -358,14 +358,14 @@ export function GlobalSearch() {
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-2 text-sm text-left transition-colors",
                         isSelected
-                          ? "bg-white/8 text-white"
-                          : "text-white/60 hover:text-white"
+                          ? "bg-accent-soft text-foreground-strong"
+                          : "text-foreground-muted hover:text-foreground-strong"
                       )}
                     >
-                      <Laptop size={14} className="shrink-0 text-green-400" />
+                      <Laptop size={14} className="shrink-0 text-info" />
                       <div className="min-w-0">
                         <p className="truncate">{r.data.description ?? r.data.mac}</p>
-                        <p className="text-xs text-white/30 truncate">
+                        <p className="text-xs text-faint truncate font-mono">
                           {r.data.ip ?? ""} · {r.data.mac}
                         </p>
                       </div>
@@ -378,12 +378,12 @@ export function GlobalSearch() {
         ) : (
           /* Empty state when no query */
           <div className="py-8 text-center">
-            <p className="text-sm text-white/30">
+            <p className="text-sm text-muted">
               Type to search networks
               {selectedNetwork ? ", devices, and clients" : ""}
             </p>
             {!selectedNetwork && (
-              <p className="text-xs text-white/20 mt-1">
+              <p className="text-xs text-faint mt-1">
                 Select a network to search devices and clients
               </p>
             )}

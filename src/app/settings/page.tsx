@@ -88,7 +88,7 @@ function KeyField({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <label htmlFor={fieldKey} className="text-sm font-medium text-white/80">{label}</label>
+        <label htmlFor={fieldKey} className="text-sm font-medium text-foreground">{label}</label>
         {isSet ? (
           <span className="flex items-center gap-1 text-xs text-green-400">
             <CheckCircle size={12} /> Set — <span className="font-mono">{current}</span>
@@ -106,12 +106,12 @@ function KeyField({
           placeholder={isSet ? "Enter new value to replace…" : placeholder}
           className={cn(
             "w-full px-3 py-2 pr-10 rounded-lg text-sm font-mono",
-            "bg-white/5 border border-white/10",
-            "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            "bg-overlay border",
+            "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500"
           )}
         />
         <button type="button" onClick={() => setShow((s) => !s)}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-faint hover:text-foreground-muted">
           {show ? <EyeOff size={15} /> : <Eye size={15} />}
         </button>
       </div>
@@ -127,14 +127,14 @@ function TextField({
 }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={fieldKey} className="text-sm font-medium text-white/80 block">{label}</label>
+      <label htmlFor={fieldKey} className="text-sm font-medium text-foreground block">{label}</label>
       <input
         id={fieldKey} type={type} value={value}
         onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className={cn(
           "w-full px-3 py-2 rounded-lg text-sm font-mono",
-          "bg-white/5 border border-white/10",
-          "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          "bg-overlay border",
+          "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500"
         )}
       />
     </div>
@@ -192,13 +192,13 @@ function NetworkThresholdsSection({
   }
 
   return (
-    <div className="rounded-xl border border-white/10 p-5 space-y-4">
+    <div className="rounded-xl border p-5 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">
+          <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider">
             Per-Network Alert Thresholds
           </h2>
-          <p className="text-xs text-white/30 mt-0.5">
+          <p className="text-xs text-faint mt-0.5">
             Override the global threshold ({globalThreshold}) for specific networks. Leave blank to use global.
           </p>
         </div>
@@ -209,7 +209,7 @@ function NetworkThresholdsSection({
             </span>
           )}
           <button type="button" onClick={handleSave} disabled={saving || !networks?.length || !isAdmin}
-            className="px-3 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-1.5">
+            className="px-3 py-1.5 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-1.5">
             {saving && <Loader2 size={12} className="animate-spin" />}
             Save Thresholds
           </button>
@@ -217,26 +217,26 @@ function NetworkThresholdsSection({
       </div>
 
       {networks === null && (
-        <div className="flex items-center gap-2 text-white/40 text-sm">
+        <div className="flex items-center gap-2 text-muted text-sm">
           <Loader2 size={14} className="animate-spin" /> Loading networks…
         </div>
       )}
       {networks !== null && networks.length === 0 && (
-        <p className="text-sm text-white/40">No networks found.</p>
+        <p className="text-sm text-muted">No networks found.</p>
       )}
       {networks !== null && networks.length > 0 && (
         <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
           {networks.map((net) => (
             <div key={net.id} className="flex items-center gap-3">
-              <span className="text-sm text-white/70 flex-1 truncate" title={net.name}>{net.name}</span>
+              <span className="text-sm text-foreground-muted flex-1 truncate" title={net.name}>{net.name}</span>
               <input
                 type="number" min={0} max={100} value={overrides[net.id] ?? ""}
                 onChange={(e) => setOverrides((prev) => ({ ...prev, [net.id]: e.target.value }))}
                 placeholder={String(globalThreshold)}
                 className={cn(
                   "w-20 px-2 py-1 rounded-lg text-sm font-mono text-right",
-                  "bg-white/5 border border-white/10",
-                  "placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-[#1e9c4a]"
+                  "bg-overlay border",
+                  "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-accent/40"
                 )}
               />
             </div>
@@ -292,13 +292,13 @@ function NetworkReportRecipientsSection({
   }
 
   return (
-    <div className="rounded-xl border border-white/10 p-5 space-y-4">
+    <div className="rounded-xl border p-5 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">
+          <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider">
             Per-Network Report Recipients
           </h2>
-          <p className="text-xs text-white/30 mt-0.5">
+          <p className="text-xs text-faint mt-0.5">
             Override the global report recipient for specific networks. Leave blank to use global.
           </p>
         </div>
@@ -309,7 +309,7 @@ function NetworkReportRecipientsSection({
             </span>
           )}
           <button type="button" onClick={handleSave} disabled={saving || !networks?.length || !isAdmin}
-            className="px-3 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-1.5">
+            className="px-3 py-1.5 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-1.5">
             {saving && <Loader2 size={12} className="animate-spin" />}
             Save Recipients
           </button>
@@ -317,18 +317,18 @@ function NetworkReportRecipientsSection({
       </div>
 
       {networks === null && (
-        <div className="flex items-center gap-2 text-white/40 text-sm">
+        <div className="flex items-center gap-2 text-muted text-sm">
           <Loader2 size={14} className="animate-spin" /> Loading networks…
         </div>
       )}
       {networks !== null && networks.length === 0 && (
-        <p className="text-sm text-white/40">No networks found.</p>
+        <p className="text-sm text-muted">No networks found.</p>
       )}
       {networks !== null && networks.length > 0 && (
         <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
           {networks.map((net) => (
             <div key={net.id} className="flex items-center gap-3">
-              <span className="text-sm text-white/70 w-40 shrink-0 truncate" title={net.name}>{net.name}</span>
+              <span className="text-sm text-foreground-muted w-40 shrink-0 truncate" title={net.name}>{net.name}</span>
               <input
                 type="email"
                 value={recipients[net.id] ?? ""}
@@ -337,8 +337,8 @@ function NetworkReportRecipientsSection({
                 disabled={!isAdmin}
                 className={cn(
                   "flex-1 px-2 py-1 rounded-lg text-sm",
-                  "bg-white/5 border border-white/10",
-                  "placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-[#1e9c4a]"
+                  "bg-overlay border",
+                  "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-accent/40"
                 )}
               />
             </div>
@@ -378,23 +378,23 @@ function AuditLogSection() {
   }
 
   return (
-    <div className="rounded-xl border border-white/10 p-5 space-y-4">
+    <div className="rounded-xl border p-5 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">
+          <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider">
             Audit Log
           </h2>
-          <p className="text-xs text-white/30 mt-0.5">
+          <p className="text-xs text-faint mt-0.5">
             Settings changes, logins, and password events (last 1,000 entries).
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 text-sm transition-colors">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-strong hover:border-strong text-sm transition-colors">
             <Download size={13} /> Export CSV
           </button>
           <button type="button" onClick={handleClear} disabled={clearing || entries?.length === 0 || !isAdmin}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 hover:border-red-500/40 hover:text-red-400 disabled:opacity-40 text-sm transition-colors">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-strong hover:border-red-500/40 hover:text-red-400 disabled:opacity-40 text-sm transition-colors">
             {clearing ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
             Clear
           </button>
@@ -402,28 +402,28 @@ function AuditLogSection() {
       </div>
 
       {entries === null && (
-        <div className="flex items-center gap-2 text-white/40 text-sm">
+        <div className="flex items-center gap-2 text-muted text-sm">
           <Loader2 size={14} className="animate-spin" /> Loading…
         </div>
       )}
       {entries !== null && entries.length === 0 && (
-        <p className="text-sm text-white/40">No audit entries yet.</p>
+        <p className="text-sm text-muted">No audit entries yet.</p>
       )}
       {entries !== null && entries.length > 0 && (
-        <div className="space-y-0 max-h-72 overflow-y-auto rounded-lg border border-white/5">
+        <div className="space-y-0 max-h-72 overflow-y-auto rounded-lg border">
           {entries.slice(0, 100).map((e) => (
-            <div key={e.id} className="flex items-start gap-3 px-3 py-2 border-b border-white/5 last:border-0 hover:bg-white/[0.02]">
-              <span className="text-[10px] font-mono text-white/30 whitespace-nowrap mt-0.5 shrink-0">
+            <div key={e.id} className="flex items-start gap-3 px-3 py-2 border-b last:border-0 hover:bg-overlay">
+              <span className="text-[10px] font-mono text-faint whitespace-nowrap mt-0.5 shrink-0">
                 {new Date(e.timestamp).toLocaleString()}
               </span>
               <div className="min-w-0">
-                <span className="text-xs font-mono text-[#30ba67]">{e.action}</span>
-                <p className="text-xs text-white/50 truncate">{e.details}</p>
+                <span className="text-xs font-mono text-accent">{e.action}</span>
+                <p className="text-xs text-muted truncate">{e.details}</p>
               </div>
             </div>
           ))}
           {entries.length > 100 && (
-            <p className="text-xs text-white/30 px-3 py-2 text-center">
+            <p className="text-xs text-faint px-3 py-2 text-center">
               Showing 100 of {entries.length} — export CSV for full log
             </p>
           )}
@@ -994,9 +994,9 @@ export default function SettingsPage() {
     <div className="max-w-xl space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Settings</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground-strong">Settings</h1>
           {status && (
-            <p className="text-xs text-white/30 mt-1">
+            <p className="text-xs text-faint mt-1">
               Keys are stored in{" "}
               <span className="font-mono">smrt-config.json</span> and take effect
               immediately — no restart needed.
@@ -1004,7 +1004,7 @@ export default function SettingsPage() {
           )}
         </div>
         <button type="button" onClick={handleLogout}
-          className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors mt-1"
+          className="flex items-center gap-1.5 text-xs text-faint hover:text-foreground-muted transition-colors mt-1"
           title="Sign out">
           <LogOut size={13} /> Sign Out
         </button>
@@ -1021,7 +1021,7 @@ export default function SettingsPage() {
       )}
 
       {loading && (
-        <div className="flex items-center gap-2 text-white/50">
+        <div className="flex items-center gap-2 text-muted">
           <Loader2 size={16} className="animate-spin" />
           <span className="text-sm">Loading…</span>
         </div>
@@ -1030,40 +1030,40 @@ export default function SettingsPage() {
       {!loading && status && (
         <form onSubmit={handleSave} className="space-y-6">
           {/* Meraki */}
-          <div className="rounded-xl border border-white/10 p-5 space-y-4">
-            <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">Cisco Meraki</h2>
+          <div className="rounded-xl border p-5 space-y-4">
+            <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider">Cisco Meraki</h2>
             <KeyField label="API Key" fieldKey="merakiApiKey" placeholder="40-character hex key from Meraki Dashboard"
               current={status.merakiApiKeyMasked} isSet={status.merakiApiKeySet}
               value={merakiKey} onChange={setMerakiKey} />
             <div className="space-y-1.5">
-              <label htmlFor="merakiBaseUrl" className="text-sm font-medium text-white/80">Base URL</label>
+              <label htmlFor="merakiBaseUrl" className="text-sm font-medium text-foreground">Base URL</label>
               <input id="merakiBaseUrl" type="text" value={merakiBaseUrl}
                 onChange={(e) => setMerakiBaseUrl(e.target.value)}
                 className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono",
-                  "bg-white/5 border border-white/10",
+                  "bg-overlay border",
                   "focus:outline-none focus:ring-1 focus:ring-blue-500")} />
-              <p className="text-xs text-white/30">Change only if using a Meraki Government or private cloud instance.</p>
+              <p className="text-xs text-faint">Change only if using a Meraki Government or private cloud instance.</p>
             </div>
           </div>
 
           {/* Anthropic */}
-          <div className="rounded-xl border border-white/10 p-5 space-y-4">
-            <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">Anthropic / Claude</h2>
+          <div className="rounded-xl border p-5 space-y-4">
+            <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider">Anthropic / Claude</h2>
             <KeyField label="API Key" fieldKey="anthropicApiKey" placeholder="sk-ant-api03-…"
               current={status.anthropicApiKeyMasked} isSet={status.anthropicApiKeySet}
               value={anthropicKey} onChange={setAnthropicKey} />
           </div>
 
           {/* SMTP / Email Reports */}
-          <div className="rounded-xl border border-white/10 p-5 space-y-4">
+          <div className="rounded-xl border p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider flex items-center gap-2">
+              <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider flex items-center gap-2">
                 <Mail size={14} /> Email Reports
               </h2>
               {status.smtpConfigured ? (
                 <span className="flex items-center gap-1 text-xs text-green-400"><CheckCircle size={12} /> SMTP configured</span>
               ) : (
-                <span className="flex items-center gap-1 text-xs text-white/30"><AlertCircle size={12} /> Not configured</span>
+                <span className="flex items-center gap-1 text-xs text-faint"><AlertCircle size={12} /> Not configured</span>
               )}
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -1071,29 +1071,29 @@ export default function SettingsPage() {
               <TextField label="Port" fieldKey="smtpPort" placeholder="587" value={smtpPort} onChange={setSmtpPort} type="number" />
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="smtpUser" className="text-sm font-medium text-white/80 block">Username</label>
+              <label htmlFor="smtpUser" className="text-sm font-medium text-foreground block">Username</label>
               <input id="smtpUser" type="text" value={smtpUser} onChange={(e) => setSmtpUser(e.target.value)}
                 placeholder={status.smtpConfigured ? "Enter new value to replace…" : "user@example.com"}
-                className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
-                  "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
+                  "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
             </div>
             <KeyField label="Password" fieldKey="smtpPass" placeholder="SMTP password or app password"
               current="" isSet={status.smtpConfigured} value={smtpPass} onChange={setSmtpPass} />
             <div className="grid grid-cols-2 gap-4">
               <TextField label="From Address" fieldKey="smtpFrom" placeholder="reports@example.com" value={smtpFrom} onChange={setSmtpFrom} />
               <div className="space-y-1.5">
-                <label htmlFor="smtpTo" className="text-sm font-medium text-white/80 block">To Address</label>
+                <label htmlFor="smtpTo" className="text-sm font-medium text-foreground block">To Address</label>
                 <input id="smtpTo" type="text" value={smtpTo} onChange={(e) => setSmtpTo(e.target.value)}
                   placeholder="recipient@company.com, ops@company.com"
-                  className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
-                    "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
-                <p className="text-xs text-white/40 mt-1">Separate multiple addresses with commas</p>
+                  className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
+                    "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                <p className="text-xs text-muted mt-1">Separate multiple addresses with commas</p>
               </div>
             </div>
             <div className="flex items-center gap-3 pt-1">
               <button type="button" onClick={handleTestSmtp} disabled={testingSmtp || !status.smtpConfigured}
                 title={!status.smtpConfigured ? "Save SMTP credentials first" : undefined}
-                className="px-4 py-1.5 rounded-lg border border-white/15 hover:border-white/30 disabled:opacity-40 text-sm transition-colors flex items-center gap-2">
+                className="px-4 py-1.5 rounded-lg border border-strong hover:border-strong disabled:opacity-40 text-sm transition-colors flex items-center gap-2">
                 {testingSmtp && <Loader2 size={13} className="animate-spin" />}
                 <Mail size={13} />
                 {testingSmtp ? "Sending…" : "Send Test Email"}
@@ -1106,27 +1106,27 @@ export default function SettingsPage() {
                 </span>
               )}
             </div>
-            <div className="flex items-center justify-between pt-2 border-t border-white/10">
+            <div className="flex items-center justify-between pt-2 border-t border">
               <div>
-                <label htmlFor="reportSchedule" className="text-sm font-medium text-white/80">Auto-send report</label>
-                <p className="text-xs text-white/40 mt-0.5">Automatically emails an HTML report on a schedule. Requires SMTP.</p>
+                <label htmlFor="reportSchedule" className="text-sm font-medium text-foreground">Auto-send report</label>
+                <p className="text-xs text-muted mt-0.5">Automatically emails an HTML report on a schedule. Requires SMTP.</p>
               </div>
               <select id="reportSchedule" value={reportSchedule} onChange={(e) => setReportSchedule(e.target.value)}
-                className={cn("px-3 py-1.5 rounded-lg text-sm", "bg-white/5 border border-white/10",
+                className={cn("px-3 py-1.5 rounded-lg text-sm", "bg-overlay border",
                   "focus:outline-none focus:ring-1 focus:ring-blue-500")}>
                 <option value="none">Off</option>
                 <option value="daily">Daily at 7am</option>
                 <option value="weekly">Monday at 7am</option>
               </select>
             </div>
-            <div className="pt-2 border-t border-white/10 space-y-3">
+            <div className="pt-2 border-t space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <label htmlFor="healthSummarySchedule" className="text-sm font-medium text-white/80">Org health summary email</label>
-                  <p className="text-xs text-white/40 mt-0.5">Single email summarising all network health scores. Requires SMTP.</p>
+                  <label htmlFor="healthSummarySchedule" className="text-sm font-medium text-foreground">Org health summary email</label>
+                  <p className="text-xs text-muted mt-0.5">Single email summarising all network health scores. Requires SMTP.</p>
                 </div>
                 <select id="healthSummarySchedule" value={healthSummarySchedule} onChange={(e) => setHealthSummarySchedule(e.target.value)}
-                  className={cn("px-3 py-1.5 rounded-lg text-sm", "bg-white/5 border border-white/10",
+                  className={cn("px-3 py-1.5 rounded-lg text-sm", "bg-overlay border",
                     "focus:outline-none focus:ring-1 focus:ring-blue-500")}>
                   <option value="none">Off</option>
                   <option value="daily">Daily at 8am</option>
@@ -1135,23 +1135,23 @@ export default function SettingsPage() {
               </div>
               {healthSummarySchedule !== "none" && (
                 <div className="space-y-1">
-                  <label htmlFor="healthSummaryTo" className="text-xs text-white/50">Override recipient (leave blank to use SMTP &quot;To&quot;)</label>
+                  <label htmlFor="healthSummaryTo" className="text-xs text-muted">Override recipient (leave blank to use SMTP &quot;To&quot;)</label>
                   <input id="healthSummaryTo" type="email" value={healthSummaryTo}
                     onChange={(e) => setHealthSummaryTo(e.target.value)}
                     placeholder="ops@example.com"
-                    className={cn("w-full px-3 py-2 rounded-lg text-sm", "bg-white/5 border border-white/10",
-                      "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                    className={cn("w-full px-3 py-2 rounded-lg text-sm", "bg-overlay border",
+                      "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
                 </div>
               )}
             </div>
           </div>
 
           {/* Notifications */}
-          <div className="rounded-xl border border-white/10 p-5 space-y-4">
-            <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider">Notifications</h2>
+          <div className="rounded-xl border p-5 space-y-4">
+            <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider">Notifications</h2>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label htmlFor="slackWebhookUrl" className="text-sm font-medium text-white/80">Slack Webhook URL</label>
+                <label htmlFor="slackWebhookUrl" className="text-sm font-medium text-foreground">Slack Webhook URL</label>
                 {status.slackWebhookSet && (
                   <span className="flex items-center gap-1 text-xs text-green-400"><CheckCircle size={12} /> Configured</span>
                 )}
@@ -1160,12 +1160,12 @@ export default function SettingsPage() {
                 <input id="slackWebhookUrl" type="text" value={slackWebhookUrl}
                   onChange={(e) => setSlackWebhookUrl(e.target.value)}
                   placeholder={status.slackWebhookSet ? "Enter new URL to replace…" : "https://hooks.slack.com/services/…"}
-                  className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
-                    "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                  className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
+                    "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
                 <button type="button" onClick={() => handleTestWebhook("slack")}
                   disabled={testingSlack || !status.slackWebhookSet}
                   title={!status.slackWebhookSet ? "Save Slack webhook URL first" : undefined}
-                  className="px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 disabled:opacity-40 text-sm transition-colors flex items-center gap-1.5 whitespace-nowrap">
+                  className="px-3 py-1.5 rounded-lg border border-strong hover:border-strong disabled:opacity-40 text-sm transition-colors flex items-center gap-1.5 whitespace-nowrap">
                   {testingSlack && <Loader2 size={12} className="animate-spin" />}
                   {testingSlack ? "Sending…" : "Test"}
                 </button>
@@ -1177,11 +1177,11 @@ export default function SettingsPage() {
                   {slackTestResult.message}
                 </span>
               )}
-              <p className="text-xs text-white/30">Separate multiple webhook URLs with commas to send to multiple Slack channels</p>
+              <p className="text-xs text-faint">Separate multiple webhook URLs with commas to send to multiple Slack channels</p>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label htmlFor="teamsWebhookUrl" className="text-sm font-medium text-white/80">Teams Webhook URL</label>
+                <label htmlFor="teamsWebhookUrl" className="text-sm font-medium text-foreground">Teams Webhook URL</label>
                 {status.teamsWebhookSet && (
                   <span className="flex items-center gap-1 text-xs text-green-400"><CheckCircle size={12} /> Configured</span>
                 )}
@@ -1190,12 +1190,12 @@ export default function SettingsPage() {
                 <input id="teamsWebhookUrl" type="text" value={teamsWebhookUrl}
                   onChange={(e) => setTeamsWebhookUrl(e.target.value)}
                   placeholder={status.teamsWebhookSet ? "Enter new URL to replace…" : "https://outlook.office.com/webhook/…"}
-                  className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
-                    "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                  className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
+                    "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
                 <button type="button" onClick={() => handleTestWebhook("teams")}
                   disabled={testingTeams || !status.teamsWebhookSet}
                   title={!status.teamsWebhookSet ? "Save Teams webhook URL first" : undefined}
-                  className="px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 disabled:opacity-40 text-sm transition-colors flex items-center gap-1.5 whitespace-nowrap">
+                  className="px-3 py-1.5 rounded-lg border border-strong hover:border-strong disabled:opacity-40 text-sm transition-colors flex items-center gap-1.5 whitespace-nowrap">
                   {testingTeams && <Loader2 size={12} className="animate-spin" />}
                   {testingTeams ? "Sending…" : "Test"}
                 </button>
@@ -1207,17 +1207,17 @@ export default function SettingsPage() {
                   {teamsTestResult.message}
                 </span>
               )}
-              <p className="text-xs text-white/30">Separate multiple webhook URLs with commas to send to multiple Teams channels</p>
+              <p className="text-xs text-faint">Separate multiple webhook URLs with commas to send to multiple Teams channels</p>
             </div>
           </div>
 
           {/* Alerting */}
-          <div className="rounded-xl border border-white/10 p-5 space-y-4">
-            <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider flex items-center gap-2">Alerting</h2>
+          <div className="rounded-xl border p-5 space-y-4">
+            <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider flex items-center gap-2">Alerting</h2>
             <div className="flex items-center justify-between">
               <div>
-                <label htmlFor="alertingEnabled" className="text-sm font-medium text-white/80">Enable proactive alerting</label>
-                <p className="text-xs text-white/40 mt-0.5">
+                <label htmlFor="alertingEnabled" className="text-sm font-medium text-foreground">Enable proactive alerting</label>
+                <p className="text-xs text-muted mt-0.5">
                   Polls all networks every 5 min and alerts if health drops below threshold.
                 </p>
               </div>
@@ -1227,24 +1227,24 @@ export default function SettingsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label htmlFor="alertThreshold" className="text-sm font-medium text-white/80 block">Alert threshold (health score)</label>
+                <label htmlFor="alertThreshold" className="text-sm font-medium text-foreground block">Alert threshold (health score)</label>
                 <input id="alertThreshold" type="number" min={0} max={100} value={alertThreshold}
                   onChange={(e) => setAlertThreshold(e.target.value)}
-                  className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
-                    "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
-                <p className="text-xs text-white/30">Default: 80 (0–100)</p>
+                  className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
+                    "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                <p className="text-xs text-faint">Default: 80 (0–100)</p>
               </div>
               <div className="space-y-1.5">
-                <label htmlFor="alertCooldownMinutes" className="text-sm font-medium text-white/80 block">Alert cooldown (minutes)</label>
+                <label htmlFor="alertCooldownMinutes" className="text-sm font-medium text-foreground block">Alert cooldown (minutes)</label>
                 <input id="alertCooldownMinutes" type="number" min={1} value={alertCooldownMinutes}
                   onChange={(e) => setAlertCooldownMinutes(e.target.value)}
-                  className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
-                    "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
-                <p className="text-xs text-white/30">Min minutes between alerts for same network. Default: 60</p>
+                  className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
+                    "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                <p className="text-xs text-faint">Min minutes between alerts for same network. Default: 60</p>
               </div>
             </div>
-            <div className="pt-2 border-t border-white/10 space-y-3">
-              <label className="text-sm font-medium text-white/80">Mute Alerts</label>
+            <div className="pt-2 border-t space-y-3">
+              <label className="text-sm font-medium text-foreground">Mute Alerts</label>
               {status.alertMutedUntil && new Date(status.alertMutedUntil) > new Date() ? (
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-yellow-400">Muted until {new Date(status.alertMutedUntil).toLocaleString()}</span>
@@ -1258,14 +1258,14 @@ export default function SettingsPage() {
                         setStatus(fresh);
                       } finally { setSavingMute(false); }
                     }}
-                    className="px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 disabled:opacity-40 text-sm transition-colors">
+                    className="px-3 py-1.5 rounded-lg border border-strong hover:border-strong disabled:opacity-40 text-sm transition-colors">
                     Clear Mute
                   </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
                   <input type="datetime-local" value={muteUntilInput} onChange={(e) => setMuteUntilInput(e.target.value)}
-                    className={cn("px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
+                    className={cn("px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
                       "focus:outline-none focus:ring-1 focus:ring-blue-500")} />
                   <button type="button" disabled={savingMute || !muteUntilInput}
                     onClick={async () => {
@@ -1279,7 +1279,7 @@ export default function SettingsPage() {
                         setMuteUntilInput("");
                       } finally { setSavingMute(false); }
                     }}
-                    className="px-4 py-2 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
+                    className="px-4 py-2 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
                     {savingMute && <Loader2 size={13} className="animate-spin" />}
                     Mute Alerts
                   </button>
@@ -1308,9 +1308,9 @@ export default function SettingsPage() {
           />
 
           {/* Security */}
-          <div className="rounded-xl border border-white/10 p-5 space-y-5">
+          <div className="rounded-xl border p-5 space-y-5">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider flex items-center gap-2">
+              <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider flex items-center gap-2">
                 <Lock size={14} /> Security
               </h2>
               {status.appPasswordSet ? (
@@ -1318,52 +1318,52 @@ export default function SettingsPage() {
                   <CheckCircle size={12} /> Password protection: Enabled
                 </span>
               ) : (
-                <span className="text-xs text-white/30">Not set — app is open</span>
+                <span className="text-xs text-faint">Not set — app is open</span>
               )}
             </div>
 
             {/* Session timeout */}
             <div className="space-y-1.5">
-              <label htmlFor="sessionTimeoutDays" className="text-sm font-medium text-white/80 block">
+              <label htmlFor="sessionTimeoutDays" className="text-sm font-medium text-foreground block">
                 Session timeout (days)
               </label>
               <input id="sessionTimeoutDays" type="number" min={1} max={365} value={sessionTimeoutDays}
                 onChange={(e) => setSessionTimeoutDays(e.target.value)}
-                className={cn("w-28 px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
+                className={cn("w-28 px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
                   "focus:outline-none focus:ring-1 focus:ring-blue-500")} />
-              <p className="text-xs text-white/30">How long sign-in sessions last before requiring re-authentication. Default: 7 days.</p>
+              <p className="text-xs text-faint">How long sign-in sessions last before requiring re-authentication. Default: 7 days.</p>
             </div>
 
             {/* Admin password */}
-            <div className="pt-3 border-t border-white/10 space-y-3">
-              <p className="text-xs text-white/40">
+            <div className="pt-3 border-t space-y-3">
+              <p className="text-xs text-muted">
                 Set a password to protect access to SmrtNetwork. Leave blank to disable.
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label htmlFor="newPass" className="text-sm font-medium text-white/80 block">New admin password</label>
+                  <label htmlFor="newPass" className="text-sm font-medium text-foreground block">New admin password</label>
                   <input id="newPass" type="password" value={newPass} onChange={(e) => setNewPass(e.target.value)}
                     placeholder="New password…"
-                    className={cn("w-full px-3 py-2 rounded-lg text-sm", "bg-white/5 border border-white/10",
-                      "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                    className={cn("w-full px-3 py-2 rounded-lg text-sm", "bg-overlay border",
+                      "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
                 </div>
                 <div className="space-y-1.5">
-                  <label htmlFor="confirmPass" className="text-sm font-medium text-white/80 block">Confirm</label>
+                  <label htmlFor="confirmPass" className="text-sm font-medium text-foreground block">Confirm</label>
                   <input id="confirmPass" type="password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)}
                     placeholder="Confirm password…"
-                    className={cn("w-full px-3 py-2 rounded-lg text-sm", "bg-white/5 border border-white/10",
-                      "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                    className={cn("w-full px-3 py-2 rounded-lg text-sm", "bg-overlay border",
+                      "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <button type="button" onClick={handleSetPassword} disabled={savingPass || isReadonly}
-                  className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
+                  className="px-4 py-1.5 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
                   {savingPass && <Loader2 size={13} className="animate-spin" />}
                   Set Password
                 </button>
                 {status.appPasswordSet && (
                   <button type="button" onClick={handleRemovePassword} disabled={savingPass || isReadonly}
-                    className="px-4 py-1.5 rounded-lg border border-white/15 hover:border-red-500/40 hover:text-red-400 disabled:opacity-40 text-sm transition-colors">
+                    className="px-4 py-1.5 rounded-lg border border-strong hover:border-red-500/40 hover:text-red-400 disabled:opacity-40 text-sm transition-colors">
                     Remove Password
                   </button>
                 )}
@@ -1381,11 +1381,11 @@ export default function SettingsPage() {
             </div>
 
             {/* Read-only password */}
-            <div className="pt-3 border-t border-white/10 space-y-3">
+            <div className="pt-3 border-t space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-white/80">Read-only password</p>
-                  <p className="text-xs text-white/40 mt-0.5">
+                  <p className="text-sm font-medium text-foreground">Read-only password</p>
+                  <p className="text-xs text-muted mt-0.5">
                     Users signing in with this password can view everything but cannot change settings.
                   </p>
                 </div>
@@ -1397,29 +1397,29 @@ export default function SettingsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label htmlFor="newReadonlyPass" className="text-sm font-medium text-white/80 block">New read-only password</label>
+                  <label htmlFor="newReadonlyPass" className="text-sm font-medium text-foreground block">New read-only password</label>
                   <input id="newReadonlyPass" type="password" value={newReadonlyPass}
                     onChange={(e) => setNewReadonlyPass(e.target.value)} placeholder="Read-only password…"
-                    className={cn("w-full px-3 py-2 rounded-lg text-sm", "bg-white/5 border border-white/10",
-                      "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                    className={cn("w-full px-3 py-2 rounded-lg text-sm", "bg-overlay border",
+                      "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
                 </div>
                 <div className="space-y-1.5">
-                  <label htmlFor="confirmReadonlyPass" className="text-sm font-medium text-white/80 block">Confirm</label>
+                  <label htmlFor="confirmReadonlyPass" className="text-sm font-medium text-foreground block">Confirm</label>
                   <input id="confirmReadonlyPass" type="password" value={confirmReadonlyPass}
                     onChange={(e) => setConfirmReadonlyPass(e.target.value)} placeholder="Confirm…"
-                    className={cn("w-full px-3 py-2 rounded-lg text-sm", "bg-white/5 border border-white/10",
-                      "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                    className={cn("w-full px-3 py-2 rounded-lg text-sm", "bg-overlay border",
+                      "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <button type="button" onClick={handleSetReadonlyPassword} disabled={savingReadonlyPass || isReadonly}
-                  className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
+                  className="px-4 py-1.5 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
                   {savingReadonlyPass && <Loader2 size={13} className="animate-spin" />}
                   Set Read-only Password
                 </button>
                 {status.readonlyPasswordSet && (
                   <button type="button" onClick={handleRemoveReadonlyPassword} disabled={savingReadonlyPass || isReadonly}
-                    className="px-4 py-1.5 rounded-lg border border-white/15 hover:border-red-500/40 hover:text-red-400 disabled:opacity-40 text-sm transition-colors">
+                    className="px-4 py-1.5 rounded-lg border border-strong hover:border-red-500/40 hover:text-red-400 disabled:opacity-40 text-sm transition-colors">
                     Remove
                   </button>
                 )}
@@ -1438,16 +1438,16 @@ export default function SettingsPage() {
           </div>
 
           {/* LDAP / Active Directory */}
-          <div className="rounded-xl border border-white/10 p-5 space-y-4">
+          <div className="rounded-xl border p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider flex items-center gap-2">
+              <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider flex items-center gap-2">
                 <Server size={14} /> LDAP / Active Directory
               </h2>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={ldapEnabled} onChange={(e) => setLdapEnabled(e.target.checked)}
                   disabled={isReadonly}
-                  className="w-4 h-4 rounded accent-[#1e9c4a] cursor-pointer" />
-                <span className="text-xs text-white/60">Enable LDAP</span>
+                  className="w-4 h-4 rounded accent-[var(--accent)] cursor-pointer" />
+                <span className="text-xs text-foreground-muted">Enable LDAP</span>
               </label>
             </div>
 
@@ -1464,7 +1464,7 @@ export default function SettingsPage() {
                     placeholder="CN=svc-account,DC=example,DC=com"
                     value={ldapBindDn} onChange={setLdapBindDn} />
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-white/80 block">
+                    <label className="text-sm font-medium text-foreground block">
                       Service Account Password
                       {status.ldapBindPasswordSet && (
                         <span className="ml-2 text-xs text-green-400 font-normal">set</span>
@@ -1472,14 +1472,14 @@ export default function SettingsPage() {
                     </label>
                     <input type="password" value={ldapBindPassword} onChange={(e) => setLdapBindPassword(e.target.value)}
                       placeholder={status.ldapBindPasswordSet ? "Enter new value to replace…" : "Service account password…"}
-                      className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
-                        "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                      className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
+                        "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
                   </div>
                 </div>
                 <TextField label="User filter" fieldKey="ldapUserFilter"
                   placeholder="(sAMAccountName={{username}})"
                   value={ldapUserFilter} onChange={setLdapUserFilter} />
-                <p className="text-xs text-white/30">
+                <p className="text-xs text-faint">
                   Use <span className="font-mono">{"{{username}}"}</span> as a placeholder for the entered username.
                 </p>
                 <div className="grid grid-cols-2 gap-4">
@@ -1490,7 +1490,7 @@ export default function SettingsPage() {
                     placeholder="CN=SmrtNetwork-ReadOnly,DC=example,DC=com"
                     value={ldapReadonlyGroup} onChange={setLdapReadonlyGroup} />
                 </div>
-                <p className="text-xs text-white/30">
+                <p className="text-xs text-faint">
                   If no groups are set, any valid directory user gets admin access. If only the admin group is set, users outside it are denied.
                 </p>
               </div>
@@ -1498,7 +1498,7 @@ export default function SettingsPage() {
 
             <div className="flex items-center gap-3 pt-1">
               <button type="button" onClick={handleSaveLdap} disabled={savingLdap || isReadonly}
-                className="px-4 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
+                className="px-4 py-1.5 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
                 {savingLdap && <Loader2 size={13} className="animate-spin" />}
                 Save LDAP Settings
               </button>
@@ -1516,18 +1516,18 @@ export default function SettingsPage() {
           </div>
 
           {/* Integrations — ServiceNow */}
-          <div className="rounded-xl border border-white/10 p-5 space-y-4">
+          <div className="rounded-xl border p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider flex items-center gap-2">
+              <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider flex items-center gap-2">
                 <Server size={14} /> ServiceNow
               </h2>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={serviceNowEnabled} onChange={(e) => setServiceNowEnabled(e.target.checked)}
-                  disabled={isReadonly} className="w-4 h-4 rounded accent-[#1e9c4a] cursor-pointer" />
-                <span className="text-xs text-white/60">Enable</span>
+                  disabled={isReadonly} className="w-4 h-4 rounded accent-[var(--accent)] cursor-pointer" />
+                <span className="text-xs text-foreground-muted">Enable</span>
               </label>
             </div>
-            <p className="text-xs text-white/30">Automatically creates a ServiceNow incident when a network health alert fires.</p>
+            <p className="text-xs text-faint">Automatically creates a ServiceNow incident when a network health alert fires.</p>
             <div className="grid grid-cols-2 gap-4">
               <TextField label="Instance URL" fieldKey="serviceNowInstanceUrl"
                 placeholder="https://company.service-now.com"
@@ -1537,13 +1537,13 @@ export default function SettingsPage() {
                 value={serviceNowUsername} onChange={setServiceNowUsername} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80 block">
+              <label className="text-sm font-medium text-foreground block">
                 Password {status?.serviceNowPasswordSet && <span className="ml-2 text-xs text-green-400 font-normal">set</span>}
               </label>
               <input type="password" value={serviceNowPassword} onChange={(e) => setServiceNowPassword(e.target.value)}
                 placeholder={status?.serviceNowPasswordSet ? "Enter new value to replace…" : "ServiceNow password…"}
-                className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
-                  "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
+                  "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <TextField label="Assignment Group (opt)" fieldKey="serviceNowAssignmentGroup"
@@ -1555,14 +1555,14 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-center gap-3 pt-1">
               <button type="button" onClick={handleSaveServiceNow} disabled={savingServiceNow || isReadonly}
-                className="px-4 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
+                className="px-4 py-1.5 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
                 {savingServiceNow && <Loader2 size={13} className="animate-spin" />}
                 Save ServiceNow
               </button>
               <button type="button" onClick={handleTestServiceNow}
                 disabled={testingServiceNow || !status?.serviceNowPasswordSet || !serviceNowInstanceUrl}
                 title={!status?.serviceNowPasswordSet ? "Save credentials first" : undefined}
-                className="px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 disabled:opacity-40 text-sm transition-colors flex items-center gap-2">
+                className="px-3 py-1.5 rounded-lg border border-strong hover:border-strong disabled:opacity-40 text-sm transition-colors flex items-center gap-2">
                 {testingServiceNow && <Loader2 size={13} className="animate-spin" />}
                 Test Connection
               </button>
@@ -1578,18 +1578,18 @@ export default function SettingsPage() {
           </div>
 
           {/* Integrations — Jira */}
-          <div className="rounded-xl border border-white/10 p-5 space-y-4">
+          <div className="rounded-xl border p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider flex items-center gap-2">
+              <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider flex items-center gap-2">
                 <Link2 size={14} /> Jira
               </h2>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={jiraEnabled} onChange={(e) => setJiraEnabled(e.target.checked)}
-                  disabled={isReadonly} className="w-4 h-4 rounded accent-[#1e9c4a] cursor-pointer" />
-                <span className="text-xs text-white/60">Enable</span>
+                  disabled={isReadonly} className="w-4 h-4 rounded accent-[var(--accent)] cursor-pointer" />
+                <span className="text-xs text-foreground-muted">Enable</span>
               </label>
             </div>
-            <p className="text-xs text-white/30">Create Jira issues from device AI diagnosis results.</p>
+            <p className="text-xs text-faint">Create Jira issues from device AI diagnosis results.</p>
             <div className="grid grid-cols-2 gap-4">
               <TextField label="Jira URL" fieldKey="jiraUrl"
                 placeholder="https://company.atlassian.net"
@@ -1599,13 +1599,13 @@ export default function SettingsPage() {
                 value={jiraEmail} onChange={setJiraEmail} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80 block">
+              <label className="text-sm font-medium text-foreground block">
                 API Token {status?.jiraApiTokenSet && <span className="ml-2 text-xs text-green-400 font-normal">set</span>}
               </label>
               <input type="password" value={jiraApiToken} onChange={(e) => setJiraApiToken(e.target.value)}
                 placeholder={status?.jiraApiTokenSet ? "Enter new token to replace…" : "Jira API token…"}
-                className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
-                  "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
+                  "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <TextField label="Project Key" fieldKey="jiraProjectKey"
@@ -1615,14 +1615,14 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-center gap-3 pt-1">
               <button type="button" onClick={handleSaveJira} disabled={savingJira || isReadonly}
-                className="px-4 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
+                className="px-4 py-1.5 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
                 {savingJira && <Loader2 size={13} className="animate-spin" />}
                 Save Jira
               </button>
               <button type="button" onClick={handleTestJira}
                 disabled={testingJira || !status?.jiraApiTokenSet || !jiraUrl}
                 title={!status?.jiraApiTokenSet ? "Save API token first" : undefined}
-                className="px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 disabled:opacity-40 text-sm transition-colors flex items-center gap-2">
+                className="px-3 py-1.5 rounded-lg border border-strong hover:border-strong disabled:opacity-40 text-sm transition-colors flex items-center gap-2">
                 {testingJira && <Loader2 size={13} className="animate-spin" />}
                 Test Connection
               </button>
@@ -1638,26 +1638,26 @@ export default function SettingsPage() {
           </div>
 
           {/* Integrations — InfluxDB */}
-          <div className="rounded-xl border border-white/10 p-5 space-y-4">
+          <div className="rounded-xl border p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider flex items-center gap-2">
+              <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider flex items-center gap-2">
                 <Database size={14} /> InfluxDB
               </h2>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={influxDbEnabled} onChange={(e) => setInfluxDbEnabled(e.target.checked)}
-                  disabled={isReadonly} className="w-4 h-4 rounded accent-[#1e9c4a] cursor-pointer" />
-                <span className="text-xs text-white/60">Enable</span>
+                  disabled={isReadonly} className="w-4 h-4 rounded accent-[var(--accent)] cursor-pointer" />
+                <span className="text-xs text-foreground-muted">Enable</span>
               </label>
             </div>
-            <p className="text-xs text-white/30">Writes network health score and device counts to InfluxDB on every poll (every 5 min). Visualize in Grafana.</p>
+            <p className="text-xs text-faint">Writes network health score and device counts to InfluxDB on every poll (every 5 min). Visualize in Grafana.</p>
             <div className="grid grid-cols-2 gap-4">
               <TextField label="URL" fieldKey="influxDbUrl"
                 placeholder="http://localhost:8086" value={influxDbUrl} onChange={setInfluxDbUrl} />
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-white/80 block">API Version</label>
+                <label className="text-sm font-medium text-foreground block">API Version</label>
                 <select value={influxDbMode} onChange={(e) => setInfluxDbMode(e.target.value as "v1" | "v2")}
                   disabled={isReadonly}
-                  className={cn("w-full px-3 py-2 rounded-lg text-sm", "bg-white/5 border border-white/10",
+                  className={cn("w-full px-3 py-2 rounded-lg text-sm", "bg-overlay border",
                     "focus:outline-none focus:ring-1 focus:ring-blue-500")}>
                   <option value="v2">InfluxDB v2 (token auth)</option>
                   <option value="v1">InfluxDB v1 (user/pass)</option>
@@ -1671,13 +1671,13 @@ export default function SettingsPage() {
                 <TextField label="Bucket" fieldKey="influxDbBucket"
                   placeholder="network-health" value={influxDbBucket} onChange={setInfluxDbBucket} />
                 <div className="col-span-2 space-y-1.5">
-                  <label className="text-sm font-medium text-white/80 block">
+                  <label className="text-sm font-medium text-foreground block">
                     API Token {status?.influxDbTokenSet && <span className="ml-2 text-xs text-green-400 font-normal">set</span>}
                   </label>
                   <input type="password" value={influxDbToken} onChange={(e) => setInfluxDbToken(e.target.value)}
                     placeholder={status?.influxDbTokenSet ? "Enter new token to replace…" : "InfluxDB v2 token…"}
-                    className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
-                      "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                    className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
+                      "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
                 </div>
               </div>
             ) : (
@@ -1687,25 +1687,25 @@ export default function SettingsPage() {
                 <TextField label="Username (opt)" fieldKey="influxDbUsername"
                   placeholder="admin" value={influxDbUsername} onChange={setInfluxDbUsername} />
                 <div className="col-span-2 space-y-1.5">
-                  <label className="text-sm font-medium text-white/80 block">
+                  <label className="text-sm font-medium text-foreground block">
                     Password (opt) {status?.influxDbPasswordSet && <span className="ml-2 text-xs text-green-400 font-normal">set</span>}
                   </label>
                   <input type="password" value={influxDbPassword} onChange={(e) => setInfluxDbPassword(e.target.value)}
                     placeholder={status?.influxDbPasswordSet ? "Enter new value to replace…" : "InfluxDB password (optional)…"}
-                    className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
-                      "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                    className={cn("w-full px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
+                      "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
                 </div>
               </div>
             )}
             <div className="flex items-center gap-3 pt-1">
               <button type="button" onClick={handleSaveInfluxDb} disabled={savingInfluxDb || isReadonly}
-                className="px-4 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
+                className="px-4 py-1.5 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
                 {savingInfluxDb && <Loader2 size={13} className="animate-spin" />}
                 Save InfluxDB
               </button>
               <button type="button" onClick={handleTestInfluxDb}
                 disabled={testingInfluxDb || !influxDbUrl}
-                className="px-3 py-1.5 rounded-lg border border-white/15 hover:border-white/30 disabled:opacity-40 text-sm transition-colors flex items-center gap-2">
+                className="px-3 py-1.5 rounded-lg border border-strong hover:border-strong disabled:opacity-40 text-sm transition-colors flex items-center gap-2">
                 {testingInfluxDb && <Loader2 size={13} className="animate-spin" />}
                 Test Connection
               </button>
@@ -1721,22 +1721,22 @@ export default function SettingsPage() {
           </div>
 
           {/* Integrations — Generic Health Webhook */}
-          <div className="rounded-xl border border-white/10 p-5 space-y-4">
-            <h2 className="font-semibold text-sm text-white/60 uppercase tracking-wider flex items-center gap-2">
+          <div className="rounded-xl border p-5 space-y-4">
+            <h2 className="font-semibold text-sm text-foreground-muted uppercase tracking-wider flex items-center gap-2">
               <Link2 size={14} /> Health Event Webhook
             </h2>
-            <p className="text-xs text-white/30">
+            <p className="text-xs text-faint">
               POSTs a JSON payload to these URLs whenever a health alert fires. Separate multiple URLs with commas.
             </p>
             <div className="flex gap-2">
               <input type="text" value={healthWebhookUrls} onChange={(e) => setHealthWebhookUrls(e.target.value)}
                 placeholder="https://your-server/webhook, https://another-server/hook"
-                className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-mono", "bg-white/5 border border-white/10",
-                  "placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
+                  "placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-blue-500")} />
             </div>
             <div className="flex items-center gap-3 pt-1">
               <button type="button" onClick={handleSaveHealthWebhook} disabled={savingHealthWebhook || isReadonly}
-                className="px-4 py-1.5 rounded-lg bg-[#1e9c4a] hover:bg-[#30ba67] disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
+                className="px-4 py-1.5 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
                 {savingHealthWebhook && <Loader2 size={13} className="animate-spin" />}
                 Save Webhook URLs
               </button>
@@ -1747,7 +1747,7 @@ export default function SettingsPage() {
           {/* Save */}
           <div className="flex items-center gap-3">
             <button type="submit" disabled={saving || !hasChanges || isReadonly}
-              className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
+              className="px-5 py-2 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-40 text-sm font-medium transition-colors flex items-center gap-2">
               {saving && <Loader2 size={14} className="animate-spin" />}
               {saving ? "Saving…" : "Save Changes"}
             </button>

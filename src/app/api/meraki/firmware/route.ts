@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { meraki } from "@/lib/meraki/client";
+import { cached } from "@/lib/meraki/cache";
+
+// Firmware versions change rarely (upgrades happen on a schedule); 2 min TTL.
+const TTL_MS = 2 * 60 * 1000;
 
 function deriveProductType(model: string): string {
   if (!model) return "other";
@@ -27,7 +31,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const devices = await meraki.devices.listByOrg(orgId);
+    const devices = await cached(
+      `meraki:devices-by-org:${orgId}`,
+      TTL_MS,
+      () => meraki.devices.listByOrg(orgId)
+    );
 
     // Group by productType + firmware
     const groupMap = new Map<string, FirmwareGroup>();
