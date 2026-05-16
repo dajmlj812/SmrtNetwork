@@ -1,0 +1,65 @@
+# SmrtNetwork — Cloudflare Tunnel deployment (zero inbound exposure).
+#
+# Use this instead of the default docker-compose.yml when:
+#   - The app needs to be reachable from the public internet
+#   - You want to hide the origin server's IP behind Cloudflare
+#   - You don't want to open inbound ports on the server's firewall
+#
+# Architecture:
+#   Browser → Cloudflare edge (TLS, WAF, DDoS)
+#           → QUIC tunnel (outbound from server)
+#           → cloudflared container
+#           → smrtnetwork:3000 (internal Docker network only)
+#
+# One-time setup (~10 min):
+#   1. In Cloudflare Zero Trust dashboard:
+#        Networks → Tunnels → Create a tunnel → name it 'smrtnetwork'
+#        Pick "Cloudflared" connector → copy the long --token value (eyJ...)
+#   2. Drop the token in .env:    CLOUDFLARE_TUNNEL_TOKEN=eyJ...
+#   3. Create the external Docker network if it doesn't exist:
+#        docker network create proxy
+#   4. docker compose -f docker-compose.tunnel.yml up -d
+#   5. Back in Zero Trust → Public Hostname → add your hostname pointing to
+#        Type: HTTP   URL: smrtnetwork:3000
+#      Cloudflare will auto-create the DNS CNAME pointing at the tunnel.
+
+services:
+  smrtnetwork:
+    image: dajmlj812/smrtnetwork:latest
+    container_name: smrtnetwork
+    restart: unless-stopped
+    # No 'ports:' — ingress is via the cloudflared tunnel only.
+    networks:
+      - proxy
+    environment:
+      TZ: ${TZ:-UTC}
+    volumes:
+      # Bind mount so operator can inspect/back up config + snapshots from the host.
+      # The host directory must be owned by UID 1001 (matches the in-container user):
+      #     mkdir -p ./data && chown -R 1001:1001 ./data
+      - ./data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/api/poller/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: smrtnetwork-tunnel
+    restart: unless-stopped
+    # Outbound-only — no inbound ports needed. Cloudflared opens 4 QUIC
+    # connections to nearby Cloudflare PoPs and accepts proxied requests.
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN is required}
+    networks:
+      - proxy
+    depends_on:
+      - smrtnetwork
+
+networks:
+  proxy:
+    # External so cloudflared and any other services (e.g. an existing NPM,
+    # other Cloudflare-tunneled apps) can share the same network namespace.
+    # Create it once: docker network create proxy
+    external: true

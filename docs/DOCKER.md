@@ -4,7 +4,18 @@ SmrtNetwork ships as a Docker image alongside the desktop binaries. The image is
 
 ---
 
-## Quick start (Docker Compose)
+## Two deployment patterns
+
+The repo ships two compose files. Pick one based on what you're doing:
+
+| File | When to use | Public exposure |
+|---|---|---|
+| **`docker-compose.yml`** | Local / NAS / homelab where you reach SmrtNetwork on the host's IP (or behind your own reverse proxy) | Container exposes port 3000 on the host |
+| **`docker-compose.tunnel.yml`** | Reachable on the public internet via Cloudflare Tunnel — no inbound ports, origin IP hidden | None — cloudflared makes outbound QUIC connections |
+
+---
+
+## Quick start — local / behind your own proxy
 
 ```bash
 # 1. Copy the example env file and fill in your API keys
@@ -18,6 +29,61 @@ docker compose up -d
 ```
 
 The compose file pulls `dajmlj812/smrtnetwork:latest` from Docker Hub by default. To build from source instead, uncomment the `build: .` line and comment out the `image:` line.
+
+---
+
+## Quick start — Cloudflare Tunnel (public internet, zero inbound ports)
+
+Use this if SmrtNetwork needs to be reachable on the public internet. Cloudflare handles TLS termination, WAF, DDoS protection, and edge routing. Your server makes only outbound connections to Cloudflare — **no inbound port 80/443 firewall rules required**, and your origin IP is never exposed to attackers.
+
+**Prerequisites:** a domain on Cloudflare (free tier is fine).
+
+```bash
+# 1. Create the tunnel in Cloudflare Zero Trust
+#    https://one.dash.cloudflare.com/ → Networks → Tunnels
+#    → Create a tunnel → Cloudflared → name it 'smrtnetwork'
+#    → COPY THE LONG --token VALUE (starts with eyJ...)
+
+# 2. Put the token in .env alongside your Meraki + Anthropic keys
+cp .env.example .env
+$EDITOR .env   # set CLOUDFLARE_TUNNEL_TOKEN, MERAKI_API_KEY, ANTHROPIC_API_KEY
+
+# 3. Create the shared Docker network (one time)
+docker network create proxy
+
+# 4. Create the bind-mount data directory with the right owner
+mkdir -p ./data && sudo chown -R 1001:1001 ./data
+
+# 5. Bring it up
+docker compose -f docker-compose.tunnel.yml up -d
+
+# 6. Back in Zero Trust dashboard → your tunnel → Public Hostname
+#    → Add a public hostname:
+#      Subdomain: smrtntwrk  (or whatever you want)
+#      Domain:    yourdomain.com
+#      Type:      HTTP
+#      URL:       smrtnetwork:3000      ← no trailing space!
+#    Cloudflare auto-creates the DNS CNAME pointing at the tunnel.
+
+# 7. Browse to https://smrtntwrk.yourdomain.com
+```
+
+**Security posture this gives you:**
+- TLS terminated at the Cloudflare edge with their managed cert
+- WAF and DDoS protection in front of every request
+- Origin IP never exposed — `nmap` against your server reveals nothing useful
+- Four redundant tunnel connections to different Cloudflare PoPs for HA
+- Server firewall can deny all inbound except SSH
+
+**Verifying the tunnel is the active path:**
+
+```bash
+# Tunnel request counter should increment when you hit the public URL
+curl -s http://<tunnel-container-ip>:20241/metrics | grep cloudflared_tunnel_total_requests
+
+# This should NOT return the app (origin bypass closed):
+curl -k --resolve yourdomain.com:443:<origin-ip> https://yourdomain.com/api/poller/status
+```
 
 ---
 
