@@ -1,8 +1,21 @@
-import { createHash } from "crypto";
+import { createHash, createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { readConfig } from "@/lib/config";
 
 export type Role = "admin" | "readonly" | "none";
+
+export interface VerifiedSession {
+  role: Role;
+  /**
+   * Millisecond timestamp the cookie claims for the user's last activity.
+   * `null` means the cookie carries no activity claim — either because the
+   * deployment runs in open mode (no password, role==='none') or because
+   * the cookie is in the pre-timestamp legacy format. Callers that want to
+   * enforce idle expiry should treat `null` as "unknown, grant one grace
+   * request" and refresh the cookie to the new format.
+   */
+  lastActivityAt: number | null;
+}
 
 /**
  * Set the `smrt-session` cookie with hardened flags.
@@ -57,57 +70,95 @@ function isSecureRequest(request: NextRequest): boolean {
 }
 
 /**
- * Verify a `smrt-session` cookie value and return the role it represents.
+ * Build the cookie value for a newly-issued or refreshed session. The
+ * format embeds an HMAC-signed activity timestamp so the middleware can
+ * enforce an inactivity timeout without keeping server-side session state.
+ *
+ *   <role>:<roleHash>:<tsBase36>:<sig>
+ *
+ * `sig` is HMAC-SHA256 over `role|roleHash|tsBase36`, keyed by the same
+ * `appPasswordHash` we use for the role hash itself. Bumping the activity
+ * timestamp therefore requires possession of the server's signing key —
+ * the client cannot forge a fresh timestamp on a stolen cookie.
+ */
+export function issueSessionCookie(
+  role: "admin" | "readonly",
+  signingKey: string,
+  now: number = Date.now()
+): string {
+  const suffix =
+    role === "admin"
+      ? "smrt-session-admin-v1"
+      : "smrt-session-readonly-v1";
+  const roleHash = expectedHash(signingKey, suffix);
+  const tsBase36 = now.toString(36);
+  const sig = activitySig(signingKey, role, roleHash, tsBase36);
+  return `${role}:${roleHash}:${tsBase36}:${sig}`;
+}
+
+/**
+ * Verify a `smrt-session` cookie value.
  *
  * Returns:
- *   - "admin" / "readonly" — valid session for that role
- *   - "none"               — no auth required because no app password is set
- *                            (open-mode deployment)
- *   - null                 — invalid / missing / tampered session
+ *   - { role: 'admin'|'readonly', lastActivityAt } — valid signed session
+ *   - { role: 'none',             lastActivityAt: null } — open-mode deployment
+ *   - null — invalid / missing / tampered
  *
- * This is the single source of truth for session verification. It is used
- * by both the page-render layout (`src/app/layout.tsx`) and the API auth
- * gate in middleware (`src/proxy.ts`) — keeping the logic identical so the
- * two cannot drift.
+ * This function only checks signature validity; it does NOT enforce the
+ * inactivity window. Callers that want to enforce idle expiry should
+ * compare `lastActivityAt` against `getInactivityTimeoutMinutes()` and
+ * reject themselves — keeping policy at the call site lets the middleware
+ * differentiate between an "expired session" 401 and an "invalid cookie"
+ * 401, and lets the layout decide whether to redirect.
  */
 export function verifySession(
   cookieValue: string | undefined
-): Role | null {
+): VerifiedSession | null {
   const cfg = readConfig();
 
   // Open mode: no admin password configured → everyone is admin.
   if (!cfg.appPasswordHash) {
-    return "none";
+    return { role: "none", lastActivityAt: null };
   }
 
   const session = cookieValue ?? "";
   if (!session) return null;
 
   const adminKey = cfg.appPasswordHash;
+  const parts = session.split(":");
 
-  if (session.startsWith("admin:")) {
-    const hash = session.slice("admin:".length);
-    return hash === expectedHash(adminKey, "smrt-session-admin-v1")
-      ? "admin"
-      : null;
+  // Reject open-mode cookies once a password has been set.
+  if (session === "open:admin") return null;
+
+  // New format with activity timestamp: <role>:<roleHash>:<ts>:<sig>
+  if (parts.length === 4 && (parts[0] === "admin" || parts[0] === "readonly")) {
+    const [role, roleHash, tsStr, sig] = parts;
+    const suffix =
+      role === "admin"
+        ? "smrt-session-admin-v1"
+        : "smrt-session-readonly-v1";
+    if (roleHash !== expectedHash(adminKey, suffix)) return null;
+    const expectedSig = activitySig(adminKey, role, roleHash, tsStr);
+    if (!constantTimeEqual(sig, expectedSig)) return null;
+    const ts = parseInt(tsStr, 36);
+    if (!Number.isFinite(ts) || ts <= 0) return null;
+    return { role: role as Role, lastActivityAt: ts };
   }
 
-  if (session.startsWith("readonly:")) {
-    const hash = session.slice("readonly:".length);
-    return hash === expectedHash(adminKey, "smrt-session-readonly-v1")
-      ? "readonly"
-      : null;
+  // Legacy format without timestamp: <role>:<roleHash>
+  if (parts.length === 2 && (parts[0] === "admin" || parts[0] === "readonly")) {
+    const [role, roleHash] = parts;
+    const suffix =
+      role === "admin"
+        ? "smrt-session-admin-v1"
+        : "smrt-session-readonly-v1";
+    if (roleHash !== expectedHash(adminKey, suffix)) return null;
+    return { role: role as Role, lastActivityAt: null };
   }
 
-  if (session === "open:admin") {
-    // A cookie issued during a past open-mode session, before a password
-    // was set. Reject — the operator has since locked the app down.
-    return null;
-  }
-
-  // Legacy session format (pre-role-prefix) — grant admin if valid.
+  // Legacy pre-role-prefix format — grant admin if valid.
   if (session === expectedHash(adminKey, "smrt-session-v1")) {
-    return "admin";
+    return { role: "admin", lastActivityAt: null };
   }
 
   return null;
@@ -115,4 +166,24 @@ export function verifySession(
 
 function expectedHash(signingKey: string, suffix: string): string {
   return createHash("sha256").update(signingKey + suffix).digest("hex");
+}
+
+function activitySig(
+  signingKey: string,
+  role: string,
+  roleHash: string,
+  tsBase36: string
+): string {
+  return createHmac("sha256", signingKey)
+    .update(`${role}|${roleHash}|${tsBase36}`)
+    .digest("hex");
+}
+
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
+  } catch {
+    return false;
+  }
 }

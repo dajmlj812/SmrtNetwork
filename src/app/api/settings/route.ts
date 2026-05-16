@@ -11,6 +11,7 @@ import {
   getActiveOrgId,
   getLdapConfig,
   getIntegrationConfigs,
+  getSessionTimeoutMinutes,
   maskKey,
 } from "@/lib/config";
 import { appendAuditEntry } from "@/lib/audit-log";
@@ -52,7 +53,8 @@ export async function GET() {
     appPasswordSet:   !!config.appPasswordHash,
     readonlyPasswordSet: !!config.readonlyPasswordHash,
     alertMutedUntil:  config.alertMutedUntil ?? null,
-    sessionTimeoutDays: config.sessionTimeoutDays ?? 7,
+    sessionTimeoutMinutes: getSessionTimeoutMinutes(),
+    inactivityTimeoutMinutes: config.inactivityTimeoutMinutes ?? 0,
     ldapEnabled:       ldap.enabled,
     ldapUrl:           ldap.url,
     ldapBaseDn:        ldap.baseDn,
@@ -117,7 +119,8 @@ export async function POST(req: NextRequest) {
       networkReportRecipients: Record<string, string>;
       activeOrgId: string;
       alertMutedUntil: string | undefined;
-      sessionTimeoutDays: number;
+      sessionTimeoutMinutes: number;
+      inactivityTimeoutMinutes: number;
       ldapEnabled: boolean;
       ldapUrl: string;
       ldapBaseDn: string;
@@ -203,9 +206,20 @@ export async function POST(req: NextRequest) {
           ? body.alertMutedUntil.trim()
           : undefined;
     }
-    if (body.sessionTimeoutDays != null) {
-      const days = Number(body.sessionTimeoutDays);
-      if (days >= 1 && days <= 365) updates.sessionTimeoutDays = days;
+    if (body.sessionTimeoutMinutes != null) {
+      const minutes = Number(body.sessionTimeoutMinutes);
+      // Floor at 5 minutes — going lower invites instant self-lockout
+      // after saving (the user's own session immediately expires). Cap at
+      // 365 days to match the prior `sessionTimeoutDays` upper bound.
+      if (Number.isFinite(minutes) && minutes >= 5 && minutes <= 365 * 24 * 60) {
+        updates.sessionTimeoutMinutes = Math.floor(minutes);
+      }
+    }
+    if (body.inactivityTimeoutMinutes != null) {
+      const minutes = Number(body.inactivityTimeoutMinutes);
+      if (Number.isFinite(minutes) && minutes >= 0 && minutes <= 1440) {
+        updates.inactivityTimeoutMinutes = Math.floor(minutes);
+      }
     }
     if (body.ldapEnabled != null) updates.ldapEnabled = Boolean(body.ldapEnabled);
     if (typeof body.ldapUrl === "string") updates.ldapUrl = body.ldapUrl.trim();

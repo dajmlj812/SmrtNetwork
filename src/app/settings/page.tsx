@@ -36,7 +36,8 @@ interface SettingsStatus {
   appPasswordSet: boolean;
   readonlyPasswordSet: boolean;
   alertMutedUntil: string | null;
-  sessionTimeoutDays: number;
+  sessionTimeoutMinutes: number;
+  inactivityTimeoutMinutes: number;
   ldapEnabled: boolean;
   ldapUrl: string;
   ldapBaseDn: string;
@@ -488,8 +489,18 @@ export default function SettingsPage() {
   const [readonlyPassSaved, setReadonlyPassSaved] = useState(false);
   const [savingReadonlyPass, setSavingReadonlyPass] = useState(false);
 
-  // Security — session timeout
-  const [sessionTimeoutDays, setSessionTimeoutDays] = useState("7");
+  // Security — session timeout (stored as total minutes; UI shows hours + minutes)
+  const DEFAULT_SESSION_MINUTES = 7 * 24 * 60;
+  const [sessionTimeoutHours, setSessionTimeoutHours] = useState(
+    String(Math.floor(DEFAULT_SESSION_MINUTES / 60))
+  );
+  const [sessionTimeoutMins, setSessionTimeoutMins] = useState(
+    String(DEFAULT_SESSION_MINUTES % 60)
+  );
+  const [inactivityTimeoutMinutes, setInactivityTimeoutMinutes] = useState("0");
+
+  const sessionTimeoutTotalMinutes =
+    (Number(sessionTimeoutHours) || 0) * 60 + (Number(sessionTimeoutMins) || 0);
 
   // LDAP
   const [ldapEnabled, setLdapEnabled] = useState(false);
@@ -569,7 +580,12 @@ export default function SettingsPage() {
         setHealthSummarySchedule(data.healthSummarySchedule ?? "none");
         setHealthSummaryTo(data.healthSummaryTo ?? "");
         setNetworkReportRecipients(data.networkReportRecipients ?? {});
-        setSessionTimeoutDays(String(data.sessionTimeoutDays ?? 7));
+        {
+          const total = data.sessionTimeoutMinutes ?? DEFAULT_SESSION_MINUTES;
+          setSessionTimeoutHours(String(Math.floor(total / 60)));
+          setSessionTimeoutMins(String(total % 60));
+        }
+        setInactivityTimeoutMinutes(String(data.inactivityTimeoutMinutes ?? 0));
         setLdapEnabled(data.ldapEnabled ?? false);
         setLdapUrl(data.ldapUrl ?? "");
         setLdapBaseDn(data.ldapBaseDn ?? "");
@@ -628,7 +644,10 @@ export default function SettingsPage() {
     if (healthSummaryTo.trim()) body.healthSummaryTo = healthSummaryTo.trim();
     if (Object.keys(networkReportRecipients).length > 0)
       body.networkReportRecipients = networkReportRecipients;
-    if (sessionTimeoutDays.trim()) body.sessionTimeoutDays = Number(sessionTimeoutDays.trim());
+    if (sessionTimeoutTotalMinutes >= 5)
+      body.sessionTimeoutMinutes = sessionTimeoutTotalMinutes;
+    if (inactivityTimeoutMinutes.trim())
+      body.inactivityTimeoutMinutes = Number(inactivityTimeoutMinutes.trim());
 
     try {
       const res = await fetch("/api/settings", {
@@ -648,7 +667,12 @@ export default function SettingsPage() {
       setHealthSummarySchedule(fresh.healthSummarySchedule ?? "none");
       setHealthSummaryTo(fresh.healthSummaryTo ?? "");
       setNetworkReportRecipients(fresh.networkReportRecipients ?? {});
-      setSessionTimeoutDays(String(fresh.sessionTimeoutDays ?? 7));
+      {
+        const total = fresh.sessionTimeoutMinutes ?? DEFAULT_SESSION_MINUTES;
+        setSessionTimeoutHours(String(Math.floor(total / 60)));
+        setSessionTimeoutMins(String(total % 60));
+      }
+      setInactivityTimeoutMinutes(String(fresh.inactivityTimeoutMinutes ?? 0));
       setMerakiKey("");
       setAnthropicKey("");
       setSmtpPass("");
@@ -988,7 +1012,8 @@ export default function SettingsPage() {
     (status && reportSchedule !== (status.reportSchedule ?? "none")) ||
     (status && healthSummarySchedule !== (status.healthSummarySchedule ?? "none")) ||
     (status && healthSummaryTo !== (status.healthSummaryTo ?? "")) ||
-    (status && sessionTimeoutDays !== String(status.sessionTimeoutDays ?? 7));
+    (status && sessionTimeoutTotalMinutes !== (status.sessionTimeoutMinutes ?? DEFAULT_SESSION_MINUTES)) ||
+    (status && inactivityTimeoutMinutes !== String(status.inactivityTimeoutMinutes ?? 0));
 
   return (
     <div className="max-w-xl space-y-6">
@@ -1324,14 +1349,41 @@ export default function SettingsPage() {
 
             {/* Session timeout */}
             <div className="space-y-1.5">
-              <label htmlFor="sessionTimeoutDays" className="text-sm font-medium text-foreground block">
-                Session timeout (days)
+              <span className="text-sm font-medium text-foreground block">
+                Session timeout
+              </span>
+              <div className="flex items-center gap-2">
+                <input id="sessionTimeoutHours" type="number" min={0} max={365 * 24}
+                  value={sessionTimeoutHours} aria-label="Hours"
+                  onChange={(e) => setSessionTimeoutHours(e.target.value)}
+                  className={cn("w-24 px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
+                    "focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                <label htmlFor="sessionTimeoutHours" className="text-sm text-foreground-muted">hours</label>
+                <input id="sessionTimeoutMins" type="number" min={0} max={59}
+                  value={sessionTimeoutMins} aria-label="Minutes"
+                  onChange={(e) => setSessionTimeoutMins(e.target.value)}
+                  className={cn("w-20 px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
+                    "focus:outline-none focus:ring-1 focus:ring-blue-500")} />
+                <label htmlFor="sessionTimeoutMins" className="text-sm text-foreground-muted">minutes</label>
+              </div>
+              <p className="text-xs text-faint">
+                How long sign-in sessions last before requiring re-authentication. Default: 7 days (168 hours).
+                {sessionTimeoutTotalMinutes > 0 && sessionTimeoutTotalMinutes < 5 && (
+                  <span className="text-red-400"> Minimum is 5 minutes.</span>
+                )}
+              </p>
+            </div>
+
+            {/* Inactivity timeout */}
+            <div className="space-y-1.5">
+              <label htmlFor="inactivityTimeoutMinutes" className="text-sm font-medium text-foreground block">
+                Inactivity timeout (minutes)
               </label>
-              <input id="sessionTimeoutDays" type="number" min={1} max={365} value={sessionTimeoutDays}
-                onChange={(e) => setSessionTimeoutDays(e.target.value)}
+              <input id="inactivityTimeoutMinutes" type="number" min={0} max={1440} value={inactivityTimeoutMinutes}
+                onChange={(e) => setInactivityTimeoutMinutes(e.target.value)}
                 className={cn("w-28 px-3 py-2 rounded-lg text-sm font-mono", "bg-overlay border",
                   "focus:outline-none focus:ring-1 focus:ring-blue-500")} />
-              <p className="text-xs text-faint">How long sign-in sessions last before requiring re-authentication. Default: 7 days.</p>
+              <p className="text-xs text-faint">Sign users out after this many minutes of no mouse, keyboard, or scroll activity. Set to 0 to disable.</p>
             </div>
 
             {/* Admin password */}

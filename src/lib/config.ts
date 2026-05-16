@@ -25,7 +25,10 @@ export interface AppConfig {
   appPasswordHash?: string;
   readonlyPasswordHash?: string;
   alertMutedUntil?: string;
+  /** @deprecated kept only as a fallback when sessionTimeoutMinutes is unset (pre-0.7.4 configs). */
   sessionTimeoutDays?: number;
+  sessionTimeoutMinutes?: number;
+  inactivityTimeoutMinutes?: number;
   ldapEnabled?: boolean;
   ldapUrl?: string;
   ldapBaseDn?: string;
@@ -139,9 +142,25 @@ export function isAlertMuted(): boolean {
   return new Date(until) > new Date();
 }
 
+export function getSessionTimeoutMinutes(): number {
+  const c = readConfig();
+  if (typeof c.sessionTimeoutMinutes === "number" && c.sessionTimeoutMinutes >= 1) {
+    return Math.floor(c.sessionTimeoutMinutes);
+  }
+  if (typeof c.sessionTimeoutDays === "number" && c.sessionTimeoutDays >= 1) {
+    return Math.floor(c.sessionTimeoutDays) * 24 * 60;
+  }
+  return 7 * 24 * 60;
+}
+
 export function getSessionTimeoutSeconds(): number {
-  const days = readConfig().sessionTimeoutDays ?? 7;
-  return days * 24 * 60 * 60;
+  return getSessionTimeoutMinutes() * 60;
+}
+
+export function getInactivityTimeoutMinutes(): number {
+  const m = readConfig().inactivityTimeoutMinutes;
+  if (typeof m !== "number" || !Number.isFinite(m) || m < 0) return 0;
+  return Math.floor(m);
 }
 
 export function getLdapConfig() {

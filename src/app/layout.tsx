@@ -19,10 +19,12 @@ import { RoleProvider, type Role } from "@/lib/context/RoleContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { UpdateBanner } from "@/components/layout/UpdateBanner";
+import { InactivityTimeoutWatcher } from "@/components/layout/InactivityTimeoutWatcher";
 import { KeyboardShortcutsModal } from "@/components/ui/KeyboardShortcutsModal";
 import { headers, cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/auth/session";
+import { getInactivityTimeoutMinutes } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "SmrtNetwork | BuildITSmrt",
@@ -51,12 +53,29 @@ export default async function RootLayout({
     if (verified === null) {
       redirect("/login");
     }
+    // Idle expiry: if the cookie's signed activity timestamp is older than
+    // the configured window, treat the session as expired. The proxy
+    // middleware already does this for API requests and clears the cookie,
+    // so by the time we get here for a page render, expired cookies are
+    // usually already gone — this is the defense-in-depth check.
+    const inactivityMinutes = getInactivityTimeoutMinutes();
+    if (
+      inactivityMinutes > 0 &&
+      verified.lastActivityAt !== null &&
+      Date.now() - verified.lastActivityAt > inactivityMinutes * 60 * 1000
+    ) {
+      redirect("/login");
+    }
     // "none" means open mode (no password set) — treat as admin for page rendering.
-    role = verified === "none" ? "admin" : verified;
+    role = verified.role === "none" ? "admin" : verified.role;
   }
 
   const themeCookie = (await cookies()).get("smrt-theme")?.value;
   const defaultTheme = themeCookie === "light" || themeCookie === "dark" ? themeCookie : "dark";
+
+  // Only enforce inactivity timeout against authenticated sessions — public
+  // routes (login) have no session to expire.
+  const inactivityTimeoutMinutes = isPublic ? 0 : getInactivityTimeoutMinutes();
 
   return (
     <html
@@ -75,6 +94,7 @@ export default async function RootLayout({
             <QueryProvider>
               <NetworkProvider>
                 <RoleProvider role={role}>
+                  <InactivityTimeoutWatcher timeoutMinutes={inactivityTimeoutMinutes} />
                   <GlobalSearch />
                   <KeyboardShortcutsModal />
                   <div className="flex flex-col h-screen bg-background text-foreground">

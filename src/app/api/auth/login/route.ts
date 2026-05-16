@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { readConfig, getLdapConfig, getSessionTimeoutSeconds } from "@/lib/config";
 import { createHash } from "crypto";
 import { appendAuditEntry } from "@/lib/audit-log";
-import { setSessionCookie } from "@/lib/auth/session";
-
-function makeSessionCookie(signingHash: string, suffix: string, role: string): string {
-  const hash = createHash("sha256").update(signingHash + suffix).digest("hex");
-  return `${role}:${hash}`;
-}
+import { setSessionCookie, issueSessionCookie } from "@/lib/auth/session";
 
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as { password: string; username?: string };
@@ -43,8 +38,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: result.error ?? "Authentication failed" }, { status: 401 });
     }
 
-    const suffix = result.role === "admin" ? "smrt-session-admin-v1" : "smrt-session-readonly-v1";
-    const cookie = makeSessionCookie(cfg.appPasswordHash, suffix, result.role);
+    const cookie = issueSessionCookie(result.role, cfg.appPasswordHash);
     const res = NextResponse.json({ ok: true, role: result.role });
     setSessionCookie(res, req, cookie, maxAge);
     appendAuditEntry("auth.login", `LDAP login: ${username} (role: ${result.role})`);
@@ -54,7 +48,7 @@ export async function POST(req: NextRequest) {
   // PIN auth — check admin password
   const inputHash = createHash("sha256").update(password).digest("hex");
   if (inputHash === cfg.appPasswordHash) {
-    const cookie = makeSessionCookie(cfg.appPasswordHash, "smrt-session-admin-v1", "admin");
+    const cookie = issueSessionCookie("admin", cfg.appPasswordHash);
     const res = NextResponse.json({ ok: true, role: "admin" });
     setSessionCookie(res, req, cookie, maxAge);
     appendAuditEntry("auth.login", "Admin login (PIN)");
@@ -63,7 +57,7 @@ export async function POST(req: NextRequest) {
 
   // Check read-only password
   if (cfg.readonlyPasswordHash && inputHash === cfg.readonlyPasswordHash) {
-    const cookie = makeSessionCookie(cfg.appPasswordHash, "smrt-session-readonly-v1", "readonly");
+    const cookie = issueSessionCookie("readonly", cfg.appPasswordHash);
     const res = NextResponse.json({ ok: true, role: "readonly" });
     setSessionCookie(res, req, cookie, maxAge);
     appendAuditEntry("auth.login", "Read-only login (PIN)");
