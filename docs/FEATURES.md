@@ -10,13 +10,17 @@
 
 ## Dashboard
 
-- **Health score card** — 0–100 score with letter grade, calculated from device status and alert counts
-- **Stat cards** — total devices, online, offline/alerting, connected clients; refreshes every 60 seconds
-- **Snapshot trend chart** — health score history from background poller snapshots
-- **Bandwidth trend chart** — sent/received bytes over the last 48 snapshots (5-minute intervals), area chart with blue/green series
-- **Client count trend chart** — connected client count history alongside the health score trend
-- **Live event feed** — recent Meraki events for the selected network (association, VPN changes, reboots); network name in header links to the Traffic page
-- **Poller status indicator** — shows whether the background health poller is running
+Restructured for NOC priority — the AI verdict is on top, counts below, trends in a single tabbed panel.
+
+- **AI Network Health card** (full row, accent-tinted) — Claude scores the network and lists prioritised issues + remediation steps. Auto-runs whenever the selected network changes; refresh button re-runs on demand
+- **Alerts Summary** — enabled alert profiles for the selected network, side-by-side with the AI card
+- **Stat cards** — total devices, online (with up/down trend vs. last snapshot), offline/alerting (tinted red when non-zero), connected clients; refreshes every 60 seconds
+- **Trends panel** — single tabbed widget collapsing three previous charts:
+  - **Health** — 30 most recent snapshots
+  - **Clients** — 24-hour connected-client trend
+  - **Bandwidth** — sent/received bytes over the last 48 snapshots
+- **Live event feed** — recent Meraki events for the selected network (association, VPN changes, reboots) with a pulsing live dot; network name in header links to the Traffic page
+- **Poller status indicator** — small status line under the page title; shows whether the background health poller is running and the active threshold
 - **Network Report** — generates a per-network device + client HTML report; saved to report history automatically
 - **Report history** — last 15 generated reports accessible from a dropdown on the Report button
 - **Download HTML / PDF** — org-wide health report; optionally emailed if SMTP is configured
@@ -71,6 +75,7 @@
 - Columns: port ID, name, status, speed, VLAN, PoE draw (W), client count, uplink flag
 - Disconnected non-uplink ports highlighted
 - All switches and all ports shown (no row limit)
+- **Streamed progressive loading** — large networks load switch-by-switch instead of one blocking spinner. NDJSON stream from `/api/meraki/switches` emits each switch as soon as Meraki returns its data; a live progress bar ticks up as rows appear. Concurrency is capped server-side at 4 to stay under Meraki's 10 req/s rate limit
 - **CSV export** — download port data per switch
 
 ## VPN
@@ -101,12 +106,14 @@
 ## Cameras (`/cameras`)
 
 - All MV cameras in the selected network shown as thumbnail cards in a responsive grid
-- **Live snapshots** — generates and displays a snapshot URL for each camera (refreshes on demand)
+- **Auto-refreshing live snapshots** — each card regenerates its snapshot every 20 seconds, staggered 1.5 s per card so all cameras don't hit Meraki simultaneously. Polling pauses when the browser tab is hidden and resumes on focus
+- **Live indicator** — a pulsing "● Live" pill flashes in the corner of each card during refresh
+- **Preload-before-swap** — Meraki returns a snapshot URL immediately but the JPEG takes a few seconds to become available; the new image preloads off-screen (up to 4 retries × 1.5 s) and only swaps into the visible `<img>` once it actually loads. Previous snapshot stays on screen throughout — no flicker, no "No preview" flash between refreshes
 - Status badge overlay (online/alerting/offline/dormant) on each thumbnail
 - LAN IP, model, and serial shown per camera
 - **Direct video link** (external icon) opens the camera's live video URL in a new tab
-- Refresh individual cameras or all at once
-- Gracefully shows "Camera offline" or "No preview" for cameras that cannot generate a snapshot
+- Manual per-card refresh button + page-level "Reload list" button
+- Offline cameras don't poll (no rate-limit waste); shows "Camera offline" instead
 
 ## Alerts
 
@@ -147,7 +154,23 @@
 - Background poller saves a health snapshot every 5 minutes
 - Snapshots used for the dashboard trend chart and the compare view
 - Automatically pruned: snapshots older than 30 days are removed; hard cap of 2,000 entries
-- Stored locally in `%APPDATA%\SmrtNetwork\`
+- Stored alongside `smrt-config.json` under `$SMRT_DATA_DIR/data/` (defaults: `%APPDATA%\SmrtNetwork\` on Windows exe, `~/Library/Application Support/SmrtNetwork/` on macOS, `~/.config/SmrtNetwork/` on Linux, `/data/` in the Docker container)
+
+## Meraki API caching
+
+In-memory cache layer (`src/lib/meraki/cache.ts`) with inflight-request coalescing sits in front of every read-heavy Meraki proxy route. Eliminates the 429 storms that come from multiple browser tabs / page reloads refetching the same data.
+
+| Endpoint | TTL |
+|---|---|
+| `/api/meraki/organizations` | 10 min |
+| `/api/meraki/networks` | 5 min |
+| `/api/meraki/alerts`, `/api/meraki/firmware` | 2 min |
+| `/api/meraki/devices` (network), `/api/meraki/cameras` | 60 s |
+| `/api/meraki/devices` (org statuses), `/api/meraki/clients`, `/api/meraki/overview` | 30 s |
+| `/api/meraki/events` | 15 s |
+| `/api/meraki/cameras/[serial]/snapshot` | 5 s (coalesce-only) |
+
+429 retries against Meraki are bounded to 4 attempts with exponential backoff — requests fail loudly within ~20 s instead of hanging forever.
 
 ## Global Search (Cmd+K / Ctrl+K)
 
@@ -181,6 +204,9 @@
 - **Session timeout** — configurable 1–365 days (default 7); applies to both admin and read-only sessions
 - **LDAP / Active Directory** — authenticate with a directory account; group membership maps to admin or read-only role; PIN auth still available as fallback
 - **Audit log** — all logins, settings saves, and password changes recorded with timestamp (last 1,000 entries; CSV export)
+- **API auth gate** — every `/api/*` request is verified against the session cookie in middleware (`src/proxy.ts`). A narrow public allowlist remains: `/api/auth/{login,logout,config}` and `/api/poller/status` (container HEALTHCHECK)
+- **Hardened session cookie** — `HttpOnly` + `SameSite=Lax`; `Secure` flag automatically set when the request arrived over HTTPS (directly or via an upstream proxy's `x-forwarded-proto: https` header)
+- **Hardened response headers** on every response: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()`, `Strict-Transport-Security: max-age=63072000; includeSubDomains`. `X-Powered-By` removed
 
 ## Integrations
 
@@ -194,8 +220,28 @@
 ## Dark / Light Mode
 
 - Toggle between dark and light theme from the sidebar footer
+- Both themes fully supported — UI is built on semantic Tailwind v4 tokens (`foreground-strong`, `card`, `accent`, etc.) defined in `src/app/globals.css`; no hardcoded white-opacity utilities remain in the codebase
 - Persisted in a `smrt-theme` cookie — survives browser restarts and is read server-side to avoid flash-of-unstyled-content
 - Defaults to dark mode
+
+## Navigation
+
+Sidebar grouped into four sections for fast scanning:
+
+| Section | Items |
+|---|---|
+| Monitor | Overview, Dashboard, Topology, Alerts |
+| Inventory | Devices, Clients, Firmware, Traffic |
+| By product | Switches, Wireless, VPN, Cellular, Sensors, Cameras |
+| Tools | Ask AI, Compare, Settings |
+
+Section labels rendered as small uppercase-tracked headers; the active nav item is tinted with the brand accent green.
+
+## Typography
+
+- **Inter** (sans) and **JetBrains Mono** (mono) loaded via `next/font/google` — no external requests, no FOUT
+- Page headings: `text-2xl font-bold tracking-tight text-foreground-strong`
+- Tabular numerics on stat cards (`tabular-nums`) so digits align column-wise
 
 ## PWA (Progressive Web App)
 
@@ -217,14 +263,18 @@
 
 Available on: Clients table, Devices table, Alert Log table. Files use UTF-8 BOM for correct Excel rendering.
 
-## Integrations
+## Container Deployment (Docker)
 
-| Integration | Trigger | What it does |
-|---|---|---|
-| ServiceNow | Health alert fires | Creates an incident with network details, score, and device counts |
-| Jira | AI Diagnose → Create Jira Issue | Creates an issue with device info and Claude's diagnosis |
-| InfluxDB | Every 5-minute poll | Writes `network_health` time-series metrics for Grafana |
-| Health webhook | Health alert fires | POSTs JSON payload to any configured URL(s) |
+Recommended for server / NAS / homelab deployment (Synology, Unraid, Proxmox LXC, plain Linux). For single-user desktop use, the native binaries (below) remain simpler.
+
+- **Public image:** `dajmlj812/smrtnetwork` on Docker Hub (`:latest` and version-pinned tags `:0.7.x`)
+- **Multi-stage build** based on `node:24-alpine` using Next.js `output: "standalone"` — runtime image is ~150 MB
+- **Non-root container user** (`smrt`, UID/GID 1001)
+- **Single persistent volume** at `/data` for `smrt-config.json`, snapshots, alert log, audit log, report history, client tags
+- **Built-in HEALTHCHECK** hits the cheap `/api/poller/status` endpoint every 30 s
+- **One-command deploy** via the included `docker-compose.yml` (`docker compose up -d` after filling in `.env`)
+- **`npm run docker:build` / `npm run docker:push`** scripts auto-tag the image with the version from `package.json`; override the namespace via `DOCKER_NAMESPACE` env var
+- Full operator docs in [`docs/DOCKER.md`](DOCKER.md)
 
 ## Portable Executables
 
