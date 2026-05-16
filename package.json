@@ -10,7 +10,9 @@
     "type-check": "tsc --noEmit",
     "build:exe": "next build && node scripts/build-exe.mjs",
     "build:mac": "next build && node scripts/build-mac.mjs",
-    "build:linux": "next build && node scripts/build-linux.mjs"
+    "build:linux": "next build && node scripts/build-linux.mjs",
+    "docker:build": "node scripts/build-docker.mjs",
+    "docker:push": "node scripts/build-docker.mjs --push"
   },
   "devDependencies": {
     "caxa": "^3.0.0"

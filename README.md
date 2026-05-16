@@ -11,6 +11,15 @@ Cisco Meraki network intelligence powered by Claude AI. SmrtNetwork connects to 
 
 Config and data are stored in `%APPDATA%\SmrtNetwork\` on the host machine.
 
+## Quick start (Docker)
+
+```bash
+cp .env.example .env   # fill in MERAKI_API_KEY and ANTHROPIC_API_KEY
+docker compose up -d
+```
+
+Then browse to `http://localhost:3000`. The image is published on Docker Hub as `dajmlj812/smrtnetwork`. See [Docker docs](docs/DOCKER.md) for env vars, volumes, and publishing.
+
 ## Running from source
 
 ```bash
@@ -45,6 +54,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | Document | Description |
 |---|---|
 | [Installation Guide](docs/INSTALLATION.md) | Exe, dev server, and source build options |
+| [Docker Guide](docs/DOCKER.md) | Container deployment, env vars, volumes, publishing |
 | [Admin Guide](docs/ADMIN-GUIDE.md) | Configuration, security, alerting, reports |
 | [Features](docs/FEATURES.md) | Full feature reference |
 | [Changelog](docs/CHANGELOG.md) | Version history |

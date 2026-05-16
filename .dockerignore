@@ -1,0 +1,34 @@
+.git
+.gitignore
+.gitattributes
+
+node_modules
+.next
+out
+build
+dist
+
+# Runtime / secrets — never bake these into an image
+smrt-config.json
+data/
+.env
+.env.*
+
+# Local tooling
+.vscode
+.idea
+.claude
+*.log
+npm-debug.log*
+
+# Docs / desktop packaging — not needed in image
+docs
+scripts/build-exe.mjs
+scripts/build-mac.mjs
+scripts/build-linux.mjs
+README.md
+CLAUDE.md
+
+# OS / editor noise
+.DS_Store
+Thumbs.db

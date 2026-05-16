@@ -1,0 +1,35 @@
+# SmrtNetwork — one-command server deployment.
+#
+# Usage:
+#   1. Copy .env.example to .env and fill in your Meraki + Anthropic API keys.
+#   2. docker compose up -d
+#   3. Browse to http://localhost:3000
+#
+# The named volume `smrt-data` persists smrt-config.json, snapshots, alert log,
+# audit log, report history, and client tags across container restarts.
+
+services:
+  smrtnetwork:
+    image: dajmlj812/smrtnetwork:latest
+    # Or build from source instead of pulling:
+    # build: .
+    container_name: smrtnetwork
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      MERAKI_API_KEY: ${MERAKI_API_KEY:?MERAKI_API_KEY is required}
+      MERAKI_BASE_URL: ${MERAKI_BASE_URL:-https://api.meraki.com/api/v1}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY is required}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - smrt-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/poller/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  smrt-data:
