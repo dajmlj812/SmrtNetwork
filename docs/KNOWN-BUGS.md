@@ -34,6 +34,13 @@
 
 ---
 
+## Fixed in v0.7.3
+
+| Bug | Fixed in |
+|---|---|
+| Session cookie missing `Secure` and `SameSite` flags — over HTTP it could leak in transit; without SameSite it could ride along on cross-site POSTs (CSRF) | v0.7.3 — shared `setSessionCookie()` helper sets `Secure` when the request actually arrived over HTTPS (or via `x-forwarded-proto: https`) and always sets `SameSite=Lax` + `HttpOnly` |
+| No security response headers (no X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, HSTS); `X-Powered-By: Next.js` advertised framework | v0.7.3 — all five hardening headers set in `next.config.ts`; `poweredByHeader: false` |
+
 ## Fixed in v0.7.2
 
 | Bug | Fixed in |

@@ -1,7 +1,60 @@
 import { createHash } from "crypto";
+import { NextRequest, NextResponse } from "next/server";
 import { readConfig } from "@/lib/config";
 
 export type Role = "admin" | "readonly" | "none";
+
+/**
+ * Set the `smrt-session` cookie with hardened flags.
+ *
+ * `Secure` is only set when the request was actually served over HTTPS —
+ * either directly or via a forwarding proxy (NPM, Cloudflare, etc.). This
+ * keeps the desktop exe / dev server (HTTP on localhost) working while
+ * locking the cookie down in production where TLS is terminated upstream.
+ *
+ * Always sets:
+ *   - HttpOnly  → JavaScript cannot read the cookie (mitigates XSS theft)
+ *   - SameSite=Lax → not sent on cross-site POSTs (mitigates CSRF)
+ *   - Path=/    → all routes
+ */
+export function setSessionCookie(
+  res: NextResponse,
+  request: NextRequest,
+  value: string,
+  maxAgeSeconds: number
+): void {
+  res.cookies.set("smrt-session", value, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: maxAgeSeconds,
+    secure: isSecureRequest(request),
+  });
+}
+
+/**
+ * Clear the `smrt-session` cookie. Matches setSessionCookie's flags so the
+ * browser actually replaces the existing cookie (mismatched flags can leave
+ * the original entry behind).
+ */
+export function clearSessionCookie(
+  res: NextResponse,
+  request: NextRequest
+): void {
+  res.cookies.set("smrt-session", "", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+    secure: isSecureRequest(request),
+  });
+}
+
+function isSecureRequest(request: NextRequest): boolean {
+  if (request.nextUrl.protocol === "https:") return true;
+  const forwarded = request.headers.get("x-forwarded-proto");
+  return forwarded === "https" || forwarded?.split(",")[0].trim() === "https";
+}
 
 /**
  * Verify a `smrt-session` cookie value and return the role it represents.

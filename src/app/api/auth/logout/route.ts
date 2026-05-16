@@ -1,11 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { clearSessionCookie } from "@/lib/auth/session";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const res = NextResponse.json({ ok: true });
-  res.cookies.set("smrt-session", "", {
-    httpOnly: true,
-    path: "/",
-    maxAge: 0,
-  });
+  clearSessionCookie(res, req);
   return res;
 }

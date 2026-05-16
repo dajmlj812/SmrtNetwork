@@ -4,6 +4,24 @@ All notable changes to SmrtNetwork are documented here.
 
 ---
 
+## v0.7.3 — 2026-05-16
+
+### Security hardening
+
+**Session cookie now flagged Secure + SameSite=Lax.** All `smrt-session` cookie writes (login open-mode, LDAP, admin PIN, read-only PIN, logout) go through a shared `setSessionCookie()` helper in `src/lib/auth/session.ts`. The `Secure` flag is set only when the request actually arrived over HTTPS (detected via `request.nextUrl.protocol` or an `x-forwarded-proto: https` header from upstream proxies like NPM). This keeps the desktop exe / dev server working on HTTP localhost while locking the cookie down in production deployments terminating TLS upstream. `HttpOnly` was already set; `SameSite=Lax` is new and mitigates CSRF on cross-site POSTs.
+
+**Hardened HTTP response headers** added to every response via `next.config.ts`:
+- `X-Frame-Options: DENY` — prevents clickjacking via iframe embedding
+- `X-Content-Type-Options: nosniff` — prevents MIME-type sniffing attacks
+- `Referrer-Policy: strict-origin-when-cross-origin` — limits Referer leakage
+- `Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()` — disables features the app doesn't use
+- `Strict-Transport-Security: max-age=63072000; includeSubDomains` — enforces HTTPS for 2 years (browsers ignore this header when received over HTTP, so it's safe on the desktop exe)
+- Removed `X-Powered-By: Next.js` (set `poweredByHeader: false`) — no need to advertise framework
+
+CSP intentionally not added in this release — Next.js inline scripts need nonce wiring that's a larger refactor; it will land in report-only mode in a future patch.
+
+---
+
 ## v0.7.2 — 2026-05-16
 
 ### Security fix (CRITICAL)
