@@ -4,6 +4,31 @@ All notable changes to SmrtNetwork are documented here.
 
 ---
 
+## v0.7.4 — 2026-05-16
+
+### Configurable inactivity timeout
+
+Adds an idle-timeout that logs users out after a configurable period of no activity. Disabled by default (`inactivityTimeoutMinutes: 0`); when set, enforced on both sides:
+
+- **Server-side.** Session cookies now embed an HMAC-SHA256-signed activity timestamp (`<role>:<roleHash>:<tsBase36>:<sig>`, keyed by `appPasswordHash`). The proxy middleware (`src/proxy.ts`) verifies signatures, rejects expired cookies (`401` for API, cookie-clear + layout redirect for pages), and slides the timestamp forward on each authed request (30 s threshold to avoid Set-Cookie churn). Legacy two-part cookies still verify and get upgraded to the new format on next request.
+- **Client-side.** New `InactivityTimeoutWatcher` (mounted in the auth'd layout shell only) tracks mouse/keyboard/scroll/touch, shows a 30-second countdown modal before logout, and syncs activity across tabs via `localStorage`. A new `/api/auth/heartbeat` endpoint lets the watcher keep the server's cookie timestamp fresh during pure local activity (e.g. typing a long form) without spamming real API calls.
+- **Defense-in-depth.** `src/app/layout.tsx` also applies the idle check on page renders, since middleware Set-Cookie headers don't propagate into the same-request RSC.
+
+### Session timeout granularity (hours + minutes)
+
+The "Session timeout (days)" setting is replaced with paired hours + minutes inputs in the Settings → Security section. Storage is now `sessionTimeoutMinutes` with a 5-minute floor (to prevent accidental self-lockout when the saving user's own cookie immediately expires) and a 365-day ceiling. The legacy `sessionTimeoutDays` field is preserved as a fallback so existing `smrt-config.json` files continue to resolve to the same effective timeout — no migration needed.
+
+**Files:**
+- `src/lib/config.ts` — `inactivityTimeoutMinutes`, `sessionTimeoutMinutes`, `getInactivityTimeoutMinutes()`, `getSessionTimeoutMinutes()`
+- `src/lib/auth/session.ts` — new signed-timestamp cookie format, `issueSessionCookie()`, `VerifiedSession` return shape
+- `src/proxy.ts` — idle rejection + sliding refresh
+- `src/app/layout.tsx` — defense-in-depth idle check, watcher mount
+- `src/components/layout/InactivityTimeoutWatcher.tsx` — countdown modal + cross-tab sync + heartbeat ping
+- `src/app/api/auth/heartbeat/route.ts` — no-op endpoint; middleware does the refresh work
+- `src/app/api/auth/login/route.ts`, `src/app/api/settings/route.ts`, `src/app/settings/page.tsx` — wiring
+
+---
+
 ## Deployment hardening — 2026-05-16
 
 *(No app code change — deployment recipe + docs only. Test deployment cut over to this pattern on 2026-05-16.)*
